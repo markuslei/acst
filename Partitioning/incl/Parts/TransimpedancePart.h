@@ -1,10 +1,10 @@
 /**************************************************************************************************
  *  Main authors:
- *     Inga Abel <inga.abel@tum.de>, 
- *	   Maximilian Neuner <maximilian.neuner@tum.de>, 
+ *     Inga Abel <inga.abel@tum.de>,
+ *	   Maximilian Neuner <maximilian.neuner@tum.de>,
  *     Michael Eick <michael.eick@tum.de>
  *
- * 
+ *
  *  Copyright (C) 2021
  *  Chair of Electronic Design Automation
  *  Univ.-Prof. Dr.-Ing. Ulf Schlichtmann
@@ -36,43 +36,81 @@
  *
  *************************************************************************************************/
 
-#ifndef PARTITIONING_INCL_PARTS_COMMONMODESIGNALDETECTORPART_H_
-#define PARTITIONING_INCL_PARTS_COMMONMODESIGNALDETECTORPART_H_
+#ifndef PARTITIONING_INCL_PARTS_TRANSIMPEDANCEPART_H_
+#define PARTITIONING_INCL_PARTS_TRANSIMPEDANCEPART_H_
 
 #include "Partitioning/incl/Parts/Part.h"
 #include <string>
 
+namespace StructRec {
+	class StructureNet;
+}
+
 namespace Partitioning {
 
-	class CommonModeSignalDetectorPart : public Part
+	class TransconductancePart;
+	class BiasPart;
+
+	class TransimpedancePart : public Part
 	{
 	public:
-		CommonModeSignalDetectorPart(int & id);
-		~CommonModeSignalDetectorPart();
+		TransimpedancePart(int & id);
+		~TransimpedancePart();
 
-		 bool isInitialized() const;
+		void setType(const std::string type);
+		void setStage(TransconductancePart & stage);
+		void setStageBias(BiasPart & stageBias);
+
+		bool isInitialized() const;
+
+		std::string getType() const;
+		TransconductancePart & getStage() const;
+		BiasPart & getStageBias() const;
+		const StructRec::StructureNet & getOutputNet() const;
+
+		bool hasType() const;
+		bool hasStage() const;
+		bool hasStageBias() const;
 
 		bool isBiasPart() const;
-		bool isResistorPart() const;
 		bool isLoadPart() const;
 		bool isTransconductancePart() const;
 		bool isCapacitancePart() const;
 		bool isUndefinedPart() const;
+		bool isResistorPart() const;
 		bool isCommonModeSignalDetectorPart() const;
 		bool isPositiveFeedbackPart() const;
 		bool isTransimpedancePart() const;
 
-		 void print(std::ostream & stream) const;
-		 void writeXml(Core::XmlNode& xmlNode, Core::XmlDocument& doc) const;
-
-		 bool hasCapacitors() const;
+		void print(std::ostream & stream) const;
+		virtual void writeXml(Core::XmlNode& xmlNode, Core::XmlDocument& doc) const;
 
 	private:
+		enum TypeEnum {
+			TYPE_UNINITIALIZED,
+			TYPE_SIMPLECURRENTMIRROR,
+		};
 
+		static const std::string SIMPLECURRENTMIRROR_STRING_;
 
+		typedef std::map<std::string,TypeEnum> StringToEnumMap;
+		typedef std::map<TypeEnum,std::string> EnumToStringMap;
 
+		static bool isValidString(const std::string & ttStr);
+
+		static const StringToEnumMap & getStringToEnumMap();
+		static const EnumToStringMap & getEnumToStringMap();
+
+		static TypeEnum mapStringToEnum(const std::string & ttStr);
+		static std::string mapEnumToString(const TypeEnum & tt);
+
+	private:
+		TypeEnum typeEnum_;
+		TransconductancePart * stage_;
+		BiasPart * stageBias_;
 	};
 
 }
 
-#endif /* PARTITIONING_INCL_PARTS_COMMONMODESIGNALDETECTORPART_H_ */
+
+#endif /* PARTITIONING_INCL_PARTS_TRANSIMPEDANCEPART_H_ */

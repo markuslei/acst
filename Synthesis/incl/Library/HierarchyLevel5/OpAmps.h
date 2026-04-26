@@ -83,6 +83,8 @@ namespace Synthesis
 		    std::vector<const Core::Circuit*> createSimpleTwoStageOpAmps(const Core::Circuit& oneStageOpAmp, std::mutex &myMutex);
 		    std::vector<const Core::Circuit*> createSimpleTwoStageOpAmps(const Core::Circuit& oneStageOpAmp);
 
+		    std::vector<const Core::Circuit*> createSimpleThreeStageOpAmps(const Core::Circuit& oneStageOpAmp);
+
 		    std::vector<const Core::Circuit*> createFullyDifferentialTwoStageOpAmps(std::vector<const Core::Circuit*> oneStageOpAmps);
 		    std::vector<const Core::Circuit*> createFullyDifferentialTwoStageOpAmps(const Core::Circuit & oneStageOpAmp, std::mutex &myMutex);
 		    std::vector<const Core::Circuit*> createFullyDifferentialTwoStageOpAmps(const Core::Circuit & oneStageOpAmp);
@@ -112,8 +114,10 @@ namespace Synthesis
             void addGateInstanceTerminalConnectedToADrain(const Core::InstanceTerminal & terminal);
             bool isGateInstanceTerminalConnectedToADrain(const Core::InstanceTerminal & terminal) const;
 
-			const Core::Circuit& createSimpleOpAmp(int & index, Core::Instance & firstStage, 
+			const Core::Circuit& createSimpleOpAmp(int & index, Core::Instance & firstStage,
 													Core::Instance * secondStage = nullptr);
+			const Core::Circuit& createSimpleThreeStageOpAmp(int & index, Core::Instance & firstStage,
+													Core::Instance & secondStage, Core::Instance & thirdStage);
 			const Core::Circuit& createFullyDifferentialOpAmp(int & index, Core::Instance & firstStage, Core::Instance & feedbackStage,
 													Core::Instance * secondStage1 = nullptr, Core::Instance * secondStage2 = nullptr);
 			const Core::Circuit& createComplementaryOpAmp(int & index, Core::Instance & firstStage);
@@ -126,6 +130,10 @@ namespace Synthesis
 			void addComplementarySecondStageNets(std::vector<Core::NetId> & netNames, Core::Circuit & opAmp) const;
 			
 			void connectInstanceTerminalsSimpleOpAmp(Core::Circuit & opAmp, Core::Instance & firstStage, Core::Instance * secondStage = nullptr) const;
+			void connectInstanceTerminalsSimpleThreeStageOpAmp(Core::Circuit & opAmp, Core::Instance & firstStage,
+											Core::Instance & secondStage, Core::Instance & thirdStage) const;
+			void connectInstanceTerminalsCapacitorsThreeStage(Core::Circuit & opAmp, Core::Instance & loadCapacitor,
+											Core::Instance & compensationCapacitor1, Core::Instance & compensationCapacitor2) const;
 			void connectInstanceTerminalsFullyDifferentialOpAmp(Core::Circuit & opAmp, Core::Instance & firstStage, 
                                             Core::Instance & feedbackStage, Core::Instance * secondStage1 = nullptr, Core::Instance * secondStage2 = nullptr) const;
             void connectInstanceTerminalsComplementaryOpAmp(Core::Circuit & opAmp, Core::Instance & firstStage) const;
@@ -202,6 +210,7 @@ namespace Synthesis
 			static const Core::InstanceName SECONDSTAGE_;
 			static const Core::InstanceName SECONDSTAGE1_;
 			static const Core::InstanceName SECONDSTAGE2_;
+			static const Core::InstanceName THIRDSTAGE_;
 
 			static const Core::InstanceName LOADCAPACITOR_;
 			static const Core::InstanceName LOADCAPACITOR1_;
@@ -231,6 +240,8 @@ namespace Synthesis
             static const Core::NetId OUTFIRSTSTAGE_NET_;
 			static const Core::NetId OUT1FIRSTSTAGE_NET_;
 			static const Core::NetId OUT2FIRSTSTAGE_NET_;
+
+			static const Core::NetId OUTSECONDSTAGE_NET_;
 
 			static const Core::NetId OUTFEEDBACKSTAGE_NET_;
 

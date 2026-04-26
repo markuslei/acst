@@ -47,6 +47,7 @@ namespace Synthesis {
 	class Loads;
 	class LoadParts;
     class Transconductances;
+    class Transimpedances;
     class StageBiases;
 	class StructuralLevel;
 
@@ -60,6 +61,7 @@ namespace Synthesis {
 		const Loads & getLoads() const;
 		const LoadParts & getLoadParts() const;
         const Transconductances & getTransconductances() const;
+        const Transimpedances & getTransimpedances() const;
 		const StageBiases & getStageBiases() const;
 
 		std::string toStr() const;
@@ -70,6 +72,7 @@ namespace Synthesis {
 		LoadParts * loadParts_;
         StageBiases * stageBiases_;
 		Transconductances* transconductances_;
+		Transimpedances* transimpedances_;
 
 	};
 }

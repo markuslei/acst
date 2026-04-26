@@ -37,6 +37,7 @@
  *************************************************************************************************/
 
 #include "Partitioning/incl/Parts/TransconductancePart.h"
+#include "Partitioning/incl/Parts/TransimpedancePart.h"
 
 #include "Partitioning/incl/Results/Component.h"
 #include "Partitioning/incl/Results/Result.h"
@@ -251,6 +252,11 @@ namespace Partitioning {
 	   loadParts_.push_back(&loadPart);
    }
 
+   void TransconductancePart::addTransimpedancePart(TransimpedancePart& transimpedancePart)
+   {
+	   transimpedanceParts_.push_back(&transimpedancePart);
+   }
+
    const StructRec::Structure& TransconductancePart::getHelperStructure() const
    {
 	   assert(hasHelperStructure());
@@ -267,6 +273,18 @@ namespace Partitioning {
    {
 	   assert(hasLoadPart());
 	   return loadParts_;
+   }
+
+   std::vector<TransimpedancePart*>& TransconductancePart::getTransimpedanceParts()
+   {
+	   assert(hasTransimpedancePart());
+	   return transimpedanceParts_;
+   }
+
+   const std::vector<TransimpedancePart*>& TransconductancePart::getTransimpedanceParts() const
+   {
+	   assert(hasTransimpedancePart());
+	   return transimpedanceParts_;
    }
 
    bool TransconductancePart::hasHelperStructure() const
@@ -367,6 +385,11 @@ namespace Partitioning {
 	   return !loadParts_.empty();
    }
 
+   bool TransconductancePart::hasTransimpedancePart() const
+   {
+	   return !transimpedanceParts_.empty();
+   }
+
    bool TransconductancePart::hasType() const
    {
 	   return typeEnum_ != TYPE_UNINITIALIZED;
@@ -408,6 +431,17 @@ namespace Partitioning {
 		   		   loadPart->printMainStructures(stream);
 		   		   stream << std::endl;
 		   	   }
+	   }
+
+	   if(hasTransimpedancePart())
+	   {
+		   stream << " TransimpedanceParts: " << std::endl;
+		   for(auto & transimp : transimpedanceParts_)
+		   {
+			   stream << "  " << transimp->getPartId().toStr() << " ";
+			   transimp->printMainStructures(stream);
+			   stream << std::endl;
+		   }
 	   }
    }
 
@@ -505,6 +539,11 @@ namespace Partitioning {
 	}
 
 	bool TransconductancePart::isPositiveFeedbackPart() const
+	{
+		return false;
+	}
+
+	bool TransconductancePart::isTransimpedancePart() const
 	{
 		return false;
 	}

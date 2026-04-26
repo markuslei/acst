@@ -38,6 +38,8 @@
 #include "Synthesis/incl/Library/HierarchyLevel3/Transconductances.h"
 #include "Synthesis/incl/Library/HierarchyLevel2/StructuralLevel.h"
 #include "Synthesis/incl/Library/HierarchyLevel2/DifferentialPair.h"
+#include "Synthesis/incl/Library/HierarchyLevel1/DeviceLevel.h"
+#include "Synthesis/incl/Library/HierarchyLevel1/NormalTransistor.h"
 
 
 #include "Core/incl/Circuit/Circuit.h"
@@ -52,6 +54,9 @@
 
 
 namespace Synthesis {
+
+	const Core::TerminalName Transconductances::IN_TERMINAL_  = Core::TerminalName("In");
+	const Core::TerminalName Transconductances::OUT_TERMINAL_ = Core::TerminalName("Out");
 
     const Core::TerminalName Transconductances::INPUT1_TERMINAL_ = Core::TerminalName("Input1");
 	const Core::TerminalName Transconductances::INPUT2_TERMINAL_ = Core::TerminalName("Input2");
@@ -76,6 +81,10 @@ namespace Synthesis {
 	const Core::InstanceName Transconductances::DIFFERENTIALPAIR2_ = Core::InstanceName("DifferentialPair2");
 	const Core::InstanceName Transconductances::DIFFERENTIALPAIRNMOS_ = Core::InstanceName("DifferentialPairNmos");
 	const Core::InstanceName Transconductances::DIFFERENTIALPAIRPMOS_ = Core::InstanceName("DifferentialPairPmos");
+	const Core::InstanceName Transconductances::NORMALTRANSISTOR_ = Core::InstanceName("NormalTransistor");
+
+	const Core::NetId Transconductances::IN_NET_  = Core::NetName("In").createRootIdentifier();
+	const Core::NetId Transconductances::OUT_NET_ = Core::NetName("Out").createRootIdentifier();
 
 	const Core::NetId Transconductances::INPUT1_NET_ = Core::NetName("Input1").createRootIdentifier();
 	const Core::NetId Transconductances::INPUT2_NET_ = Core::NetName("Input2").createRootIdentifier();
@@ -100,11 +109,13 @@ namespace Synthesis {
                 simpleTransconductancePmos_(nullptr),
                 feedbackTransconductanceNmos_(nullptr),
                 feedbackTransconductancePmos_(nullptr),
-                complementaryTransconductance_(nullptr)
+                complementaryTransconductance_(nullptr),
+                singleTransistorTransconductanceNmos_(nullptr),
+                singleTransistorTransconductancePmos_(nullptr)
     {
 		initializeTransconductances(structuralLevel, circuitInformation);
     }
-	
+
     Transconductances::~Transconductances()
     {
 		delete simpleTransconductanceNmos_;
@@ -114,6 +125,9 @@ namespace Synthesis {
         delete feedbackTransconductancePmos_;
 
 		delete complementaryTransconductance_;
+
+		delete singleTransistorTransconductanceNmos_;
+		delete singleTransistorTransconductancePmos_;
     }
 
     const Core::Circuit & Transconductances::getSimpleTransconductancePmos() const
@@ -144,6 +158,18 @@ namespace Synthesis {
     {
         assert(complementaryTransconductance_ != nullptr);
         return * complementaryTransconductance_;
+    }
+
+	const Core::Circuit & Transconductances::getSingleTransistorTransconductancePmos() const
+    {
+        assert(singleTransistorTransconductancePmos_ != nullptr);
+        return *singleTransistorTransconductancePmos_;
+    }
+
+	const Core::Circuit & Transconductances::getSingleTransistorTransconductanceNmos() const
+    {
+        assert(singleTransistorTransconductanceNmos_ != nullptr);
+        return *singleTransistorTransconductanceNmos_;
     }
 
 	std::string Transconductances::toStr() const
@@ -206,6 +232,11 @@ namespace Synthesis {
         {
         	simpleTransconductancePmos_ = &createSimpleTransconductance(differentialPairPmos, index);
         	simpleTransconductanceNmos_ = &createSimpleTransconductance(differentialPairNmos, index);
+
+        	const Core::Circuit & normalTransistorPmos = structuralLevel.getDeviceLevel().getNormalTransistor().getNormalTransistorPmosCircuit();
+        	const Core::Circuit & normalTransistorNmos = structuralLevel.getDeviceLevel().getNormalTransistor().getNormalTransistorNmosCircuit();
+        	singleTransistorTransconductancePmos_ = &createSingleTransistorTransconductance(normalTransistorPmos, index);
+        	singleTransistorTransconductanceNmos_ = &createSingleTransistorTransconductance(normalTransistorNmos, index);
 
         	if(circuitInformation.getCircuitParameter().isFullyDifferential())
         	{
@@ -379,7 +410,7 @@ namespace Synthesis {
         connectInstanceTerminal(transconductance, differentialPair2, DifferentialPair::SOURCE_TERMINAL_, SOURCE2_NET_);
     }
 	
-    void Transconductances::connectInstanceTerminalsOfComplementaryTransconductance(Core::Circuit & transconductance, 
+    void Transconductances::connectInstanceTerminalsOfComplementaryTransconductance(Core::Circuit & transconductance,
 									Core::Instance & differentialPairNmos, Core::Instance & differentialPairPmos)
     {
         connectInstanceTerminal(transconductance, differentialPairNmos, DifferentialPair::INPUT1_TERMINAL_, INPUT1_NET_);
@@ -395,7 +426,45 @@ namespace Synthesis {
         connectInstanceTerminal(transconductance, differentialPairPmos, DifferentialPair::SOURCE_TERMINAL_, SOURCEPMOS_NET_);
     }
 
-    
+    const Core::Circuit & Transconductances::createSingleTransistorTransconductance(const Core::Circuit & normalTransistor, int & index)
+    {
+        Core::Circuit * transconductance = new Core::Circuit;
+
+        Core::Instance & normalTransistorInstance = createInstance(normalTransistor, NORMALTRANSISTOR_);
+
+        Core::CircuitIds circuitIds;
+        Core::CircuitId transconductanceId = circuitIds.transconductance(index);
+        transconductanceId.setTechType(normalTransistor.getCircuitIdentifier().getTechType());
+        transconductance->setCircuitIdentifier(transconductanceId);
+
+        std::vector<Core::NetId> netNames;
+        netNames.push_back(IN_NET_);
+        netNames.push_back(OUT_NET_);
+        netNames.push_back(SOURCE_NET_);
+
+        std::map<Core::TerminalName, Core::NetId> terminalToNetMap;
+        terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(IN_TERMINAL_,     IN_NET_));
+        terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(OUT_TERMINAL_,    OUT_NET_));
+        terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(SOURCE_TERMINAL_, SOURCE_NET_));
+
+        addNetsToCircuit(*transconductance, netNames);
+        addTerminalsToCircuit(*transconductance, terminalToNetMap);
+
+        transconductance->addInstance(normalTransistorInstance);
+
+        connectInstanceTerminalsOfSingleTransistorTransconductance(*transconductance, normalTransistorInstance);
+        normalTransistorInstance.setCircuit(*transconductance);
+        index++;
+        return *transconductance;
+    }
+
+    void Transconductances::connectInstanceTerminalsOfSingleTransistorTransconductance(Core::Circuit & transconductance,
+                                    Core::Instance & normalTransistor)
+    {
+        connectInstanceTerminal(transconductance, normalTransistor, NormalTransistor::GATE_TERMINAL_,   IN_NET_);
+        connectInstanceTerminal(transconductance, normalTransistor, NormalTransistor::DRAIN_TERMINAL_,  OUT_NET_);
+        connectInstanceTerminal(transconductance, normalTransistor, NormalTransistor::SOURCE_TERMINAL_, SOURCE_NET_);
+    }
 
 
 }

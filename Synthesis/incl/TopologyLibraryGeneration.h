@@ -86,7 +86,7 @@ namespace Synthesis {
 
 		void createOpAmps(const FunctionalBlockLibrary & functionalBlockLibrary, const AutomaticSizing::CircuitParameter & circuitParameter);
 		const Core::Circuit & createFlatCircuit(const Core::Circuit & circuit) const;
-		void writeHSpiceFile(const Core::Circuit &  circuit, const AutomaticSizing::CircuitParameter & circuitParameter, std::string opAmpId = "empty");
+		void writeHSpiceFile(const Core::Circuit &  circuit, const AutomaticSizing::CircuitParameter & circuitParameter, std::string opAmpId = "empty", bool isThreeStage = false);
 
 		void setStructRecResult(StructRec::Result & strucRecResult);
 		void deleteStructRecResult();
@@ -94,6 +94,7 @@ namespace Synthesis {
 		std::string complementaryOpAmpFilePath_;
 		std::string fullyDifferentialOpAmpFilePath_;
 		std::string singleOutputOpAmpFilePath_;
+		std::string singleOutputThreeStageOpAmpFilePath_;
 
 		StructRec::Library * structureLibrary_;
 		StructRec::Result * structRecResult_;

@@ -66,11 +66,17 @@
 
 namespace Synthesis {
 
+	// Validation-mode toggle. When true, only 3-stage simple op-amps are
+	// written and FD/complementary pipelines are skipped. Flip to true to
+	// re-run Synthesis/test/run_validation.py against hand-written references.
+	static const bool ONLY_THREE_STAGE_ = false;
+
 	TopologyLibraryGeneration::TopologyLibraryGeneration() :
 		            Control::Analysis<LocalOptionsTopologyLibraryGeneration>(),
 					complementaryOpAmpFilePath_(""),
 					fullyDifferentialOpAmpFilePath_(""),
 					singleOutputOpAmpFilePath_(""),
+					singleOutputThreeStageOpAmpFilePath_(""),
 					structureLibrary_(nullptr),
 					structRecResult_(nullptr)
     {
@@ -86,6 +92,10 @@ namespace Synthesis {
     	mkdir(singleOutputOpAmpsDirectoryPath.c_str(), ACCESSPERMS);
     	singleOutputOpAmpFilePath_ = singleOutputOpAmpsDirectoryPath;
 
+    	std::string singleOutputThreeStageOpAmpsDirectoryPath(singleOutputOpAmpsDirectoryPath + "/ThreeStage");
+    	mkdir(singleOutputThreeStageOpAmpsDirectoryPath.c_str(), ACCESSPERMS);
+    	singleOutputThreeStageOpAmpFilePath_ = singleOutputThreeStageOpAmpsDirectoryPath;
+
     	std::string fullyDifferentialOpAmpsDirectoryPath(getLocalOptions().getHSPICENetlistDirectoryPath() + "/FullyDifferentialOpAmps");
     	mkdir(fullyDifferentialOpAmpsDirectoryPath.c_str(), ACCESSPERMS);
     	fullyDifferentialOpAmpFilePath_ = fullyDifferentialOpAmpsDirectoryPath;
@@ -98,8 +108,11 @@ namespace Synthesis {
     void TopologyLibraryGeneration::compute()
     {
 		createAllSimpleOpAmps();
-		createAllFullyDifferentialOpAmps();
-		createAllComplementaryOpAmps();
+		if(!ONLY_THREE_STAGE_)
+		{
+			createAllFullyDifferentialOpAmps();
+			createAllComplementaryOpAmps();
+		}
     }
 
     void TopologyLibraryGeneration::write()
@@ -185,37 +198,64 @@ namespace Synthesis {
 			else
 			{
 				oneStageOpAmps = library.getOpAmps().createSimpleOneStageOpAmps(caseNumber, indexSingleOutput);
-				symmetricalOpAmps = library.getOpAmps().createSymmetricalOpAmps(caseNumber, indexSymmetrical);
+				if(!ONLY_THREE_STAGE_)
+				{
+					symmetricalOpAmps = library.getOpAmps().createSymmetricalOpAmps(caseNumber, indexSymmetrical);
+				}
 			}
 
 			for(auto & oneStageOpAmp : oneStageOpAmps)
 			{
 				const Core::Circuit & flatOneStageOpAmp = createFlatCircuit(*oneStageOpAmp);
-				writeHSpiceFile(flatOneStageOpAmp, circuitParameter);
+				if(!ONLY_THREE_STAGE_)
+				{
+					writeHSpiceFile(flatOneStageOpAmp, circuitParameter);
+				}
 
 				if(!circuitParameter.isComplementary())
 				{
-					std::vector<const Core::Circuit*> twoStageOpAmps;
-					if(circuitParameter.isFullyDifferential())
+					if(!ONLY_THREE_STAGE_)
 					{
-						twoStageOpAmps = library.getOpAmps().createFullyDifferentialTwoStageOpAmps(*oneStageOpAmp);
+						std::vector<const Core::Circuit*> twoStageOpAmps;
+						if(circuitParameter.isFullyDifferential())
+						{
+							twoStageOpAmps = library.getOpAmps().createFullyDifferentialTwoStageOpAmps(*oneStageOpAmp);
+						}
+						else
+						{
+							twoStageOpAmps = library.getOpAmps().createSimpleTwoStageOpAmps(*oneStageOpAmp);
+						}
+
+						for(auto & twoStageOpAmp : twoStageOpAmps)
+						{
+							std::ostringstream oneStageOpAmpId;
+							oneStageOpAmpId << oneStageOpAmp->getCircuitIdentifier().getId();
+							const Core::Circuit & flatTwoStageOpAmp = createFlatCircuit(*twoStageOpAmp);
+							writeHSpiceFile(flatTwoStageOpAmp, circuitParameter, oneStageOpAmpId.str());
+
+
+							delete twoStageOpAmp;
+
+							delete &flatTwoStageOpAmp;
+						}
 					}
-					else
+
+					if(!circuitParameter.isFullyDifferential())
 					{
-						twoStageOpAmps = library.getOpAmps().createSimpleTwoStageOpAmps(*oneStageOpAmp);
-					}
+						std::vector<const Core::Circuit*> threeStageOpAmps =
+								library.getOpAmps().createSimpleThreeStageOpAmps(*oneStageOpAmp);
 
-					for(auto & twoStageOpAmp : twoStageOpAmps)
-					{
-						std::ostringstream oneStageOpAmpId;
-						oneStageOpAmpId << oneStageOpAmp->getCircuitIdentifier().getId();
-						const Core::Circuit & flatTwoStageOpAmp = createFlatCircuit(*twoStageOpAmp);
-						writeHSpiceFile(flatTwoStageOpAmp, circuitParameter, oneStageOpAmpId.str());
+						for(auto & threeStageOpAmp : threeStageOpAmps)
+						{
+							std::ostringstream oneStageOpAmpId;
+							oneStageOpAmpId << oneStageOpAmp->getCircuitIdentifier().getId();
+							const Core::Circuit & flatThreeStageOpAmp = createFlatCircuit(*threeStageOpAmp);
+							writeHSpiceFile(flatThreeStageOpAmp, circuitParameter, oneStageOpAmpId.str(), true);
 
+							delete threeStageOpAmp;
 
-						delete twoStageOpAmp;
-
-						delete &flatTwoStageOpAmp;
+							delete &flatThreeStageOpAmp;
+						}
 					}
 				}
 
@@ -237,7 +277,7 @@ namespace Synthesis {
 
 	}
 
-	void TopologyLibraryGeneration::writeHSpiceFile(const Core::Circuit &  circuit, const AutomaticSizing::CircuitParameter & circuitParameter, std::string oneStageOpAmpId)
+	void TopologyLibraryGeneration::writeHSpiceFile(const Core::Circuit &  circuit, const AutomaticSizing::CircuitParameter & circuitParameter, std::string oneStageOpAmpId, bool isThreeStage)
 	{
 		std::ostringstream opAmpId;
 		std::string opAmpName = circuit.getCircuitIdentifier().getName();
@@ -261,6 +301,10 @@ namespace Synthesis {
 		else if(circuitParameter.isFullyDifferential())
 		{
 			stringFilePath << fullyDifferentialOpAmpFilePath_ + "/" << opAmpId.str() << ".ckt";
+		}
+		else if(isThreeStage)
+		{
+			stringFilePath << singleOutputThreeStageOpAmpFilePath_ + "/" << opAmpId.str() << ".ckt";
 		}
 		else
 		{

@@ -205,6 +205,11 @@ namespace Partitioning {
 		return false;
 	}
 
+	bool PositiveFeedbackPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 }
 
 

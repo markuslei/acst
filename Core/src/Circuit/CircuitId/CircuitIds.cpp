@@ -54,13 +54,16 @@ namespace Core {
     const CircuitName CircuitIds::VOLTAGEBIASLOAD_ = CircuitName("VoltageBiasLoad");
     const CircuitName CircuitIds::STAGEBIAS_ = CircuitName("StageBias");
     const CircuitName CircuitIds::TRANSCONDUCTANCE_ = CircuitName("Transconductance");
+    const CircuitName CircuitIds::TRANSIMPEDANCE_ = CircuitName("Transimpedance");
 
     const  CircuitName CircuitIds::INVERTINGSTAGE_ = CircuitName("InvertingStage");
     const  CircuitName CircuitIds::FIRSTSTAGE_ = CircuitName("FirstStage");
     const  CircuitName CircuitIds::FEEDBACKSTAGE_ = CircuitName("NonInvertingStage");
+    const  CircuitName CircuitIds::NONINVERTINGSECONDSTAGE_ = CircuitName("NonInvertingSecondStage");
         
     const CircuitName CircuitIds::SINGLEOUTPUTOPAMP_ = CircuitName("one_stage_single_output_op_amp");
     const CircuitName CircuitIds::SINGLEOUTPUTTWOSTAGEOPAMP_ = CircuitName("two_stage_single_output_op_amp");
+    const CircuitName CircuitIds::SINGLEOUTPUTTHREESTAGEOPAMP_ = CircuitName("three_stage_single_output_op_amp");
     const CircuitName CircuitIds::FULLYDIFFERENTIALOPAMP_ = CircuitName("one_stage_fully_differential_op_amp");
     const CircuitName CircuitIds::FULLYDIFFERENTIALTWOSTAGEOPAMP_ = CircuitName("two_stage_fully_differential_op_amp");
     const CircuitName CircuitIds::COMPLEMENTARYOPAMP_ = CircuitName("complementary_op_amp");
@@ -174,6 +177,13 @@ namespace Core {
         return circuitId;
     }
 
+    CircuitId  CircuitIds::transimpedance(int num)
+    {
+        Core::CircuitId circuitId = TRANSIMPEDANCE_.createIdentifier();
+        circuitId.setId(num);
+        return circuitId;
+    }
+
     CircuitId  CircuitIds::invertingStage(int num)
     {
         Core::CircuitId circuitId = INVERTINGSTAGE_.createIdentifier();
@@ -184,6 +194,13 @@ namespace Core {
     CircuitId  CircuitIds::firstStage(int num)
     {
         Core::CircuitId circuitId = FIRSTSTAGE_.createIdentifier();
+        circuitId.setId(num);
+        return circuitId;
+    }
+
+    CircuitId  CircuitIds::nonInvertingSecondStage(int num)
+    {
+        Core::CircuitId circuitId = NONINVERTINGSECONDSTAGE_.createIdentifier();
         circuitId.setId(num);
         return circuitId;
     }
@@ -205,6 +222,13 @@ namespace Core {
     CircuitId CircuitIds::simpleTwoStageOpAmp(int num)
     {
         Core::CircuitId circuitId = SINGLEOUTPUTTWOSTAGEOPAMP_.createIdentifier();
+        circuitId.setId(num);
+        return circuitId;
+    }
+
+    CircuitId CircuitIds::simpleThreeStageOpAmp(int num)
+    {
+        Core::CircuitId circuitId = SINGLEOUTPUTTHREESTAGEOPAMP_.createIdentifier();
         circuitId.setId(num);
         return circuitId;
     }

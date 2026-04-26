@@ -38,6 +38,7 @@
 
 #include "Partitioning/incl/Partitioning.h"
 #include "Partitioning/incl/Parts/TransconductancePart.h"
+#include "Partitioning/incl/Parts/TransimpedancePart.h"
 #include "Partitioning/incl/Parts/CapacitancePart.h"
 #include "Partitioning/incl/Parts/ResistorPart.h"
 #include "Partitioning/incl/Parts/CommonModeSignalDetectorPart.h"
@@ -61,6 +62,7 @@ namespace Partitioning {
 		idCommonModeSignalDetectorPart_ = 1;
 		idResistorPart_ = 1;
 		idPositiveFeedbackPart_ = 1;
+		idTransimpedancePart_ = 1;
 	}
 
 	Partitioning::~Partitioning()
@@ -234,6 +236,7 @@ namespace Partitioning {
 
 	void Partitioning::partitioningSecondStage(const StructRec::StructureCircuits &circuits)
 	{
+		partitioningNonInvertingSecondStage(circuits);
 		classifyMosfetAnalogInverter(circuits);
 		classifyMosfetCascodedAnalogInverter(circuits);
 		classifyMosfetAnalogInverterNmosCurrentMirrorLoad(circuits);
@@ -250,6 +253,116 @@ namespace Partitioning {
 		classifyMosfetCascodedNMOSAnalogInverterOneDiodeTransistor(circuits);
 		classifyMosfetCascodedAnalogInverterTwoCurrentMirrorLoads(circuits);
 
+	}
+
+	void Partitioning::partitioningNonInvertingSecondStage(const StructRec::StructureCircuits & circuits)
+	{
+		if(!getResult().hasFirstStage())
+		{
+			return;
+		}
+
+		const StructRec::StructureName cmName = StructRec::StructureName("MosfetSimpleCurrentMirror");
+		const StructRec::StructurePinType cmInputPin = StructRec::StructurePinType("MosfetSimpleCurrentMirror", "Input");
+		const StructRec::StructurePinType cmOutputPin = StructRec::StructurePinType("MosfetSimpleCurrentMirror", "Output");
+		const StructRec::StructurePinType cmSourcePin = StructRec::StructurePinType("MosfetSimpleCurrentMirror", "Source");
+
+		const StructRec::StructurePinType ntDrain = StructRec::StructurePinType("MosfetNormalArray", "Drain");
+		const StructRec::StructurePinType ntGate = StructRec::StructurePinType("MosfetNormalArray", "Gate");
+		const StructRec::StructurePinType ntSource = StructRec::StructurePinType("MosfetNormalArray", "Source");
+
+		std::vector<const StructRec::Structure*> currentMirrors = circuits.findStructures(cmName);
+
+		for(auto & cm : currentMirrors)
+		{
+			if(getResult().structureAlreadyClassified(*cm))
+			{
+				continue;
+			}
+
+			const StructRec::StructureNet & cmInputNet = cm->findNet(cmInputPin);
+			const StructRec::StructureNet & cmOutputNet = cm->findNet(cmOutputPin);
+			const StructRec::StructureNet & cmSourceNet = cm->findNet(cmSourcePin);
+
+			// Transconductance candidate: MosfetNormalArray with drain on CM input,
+			// source on a supply rail different from the CM's supply rail, and gate
+			// on a first-stage output net.
+			const StructRec::Structure * txCandidate = nullptr;
+			for(auto & struc : cmInputNet.findArrayNet().findConnectedStructures(ntDrain))
+			{
+				if(getResult().structureAlreadyClassified(*struc))
+				{
+					continue;
+				}
+				const StructRec::StructureNet & gateNet = struc->findNet(ntGate);
+				const StructRec::StructureNet & sourceNet = struc->findNet(ntSource);
+
+				if(sourceNet.getIdentifier() == cmSourceNet.getIdentifier())
+				{
+					continue;
+				}
+				if(!hasFirstStageOutputConnection(gateNet, circuits))
+				{
+					continue;
+				}
+				txCandidate = struc;
+				break;
+			}
+			if(txCandidate == nullptr)
+			{
+				continue;
+			}
+
+			const StructRec::StructureNet & txSourceNet = txCandidate->findNet(ntSource);
+
+			// Stage-bias candidate: MosfetNormalArray with drain on CM output,
+			// source on the same rail as Tx, gate on a voltage bias.
+			const StructRec::Structure * bxCandidate = nullptr;
+			for(auto & struc : cmOutputNet.findArrayNet().findConnectedStructures(ntDrain))
+			{
+				if(getResult().structureAlreadyClassified(*struc))
+				{
+					continue;
+				}
+				const StructRec::StructureNet & gateNet = struc->findNet(ntGate);
+				const StructRec::StructureNet & sourceNet = struc->findNet(ntSource);
+
+				if(sourceNet.getIdentifier() != txSourceNet.getIdentifier())
+				{
+					continue;
+				}
+				if(!hasVoltageBiasOutputConnection(gateNet))
+				{
+					continue;
+				}
+				bxCandidate = struc;
+				break;
+			}
+			if(bxCandidate == nullptr)
+			{
+				continue;
+			}
+
+			TransconductancePart * transPart = new TransconductancePart(getIdTransPart());
+			transPart->setType("primarySecondStage");
+			transPart->addMainStructure(*txCandidate, getResult());
+			getResult().addTransconductancePart(*transPart);
+
+			BiasPart * biasPart = new BiasPart(getIdBiasPart());
+			biasPart->setType("currentBias");
+			biasPart->addMainStructure(*bxCandidate, getResult());
+			biasPart->addBiasedPart(*transPart);
+			transPart->addBiasPart(*biasPart);
+			getResult().addBiasPart(*biasPart);
+
+			TransimpedancePart * transimpPart = new TransimpedancePart(getIdTransimpedancePart());
+			transimpPart->setType("simpleCurrentMirror");
+			transimpPart->addMainStructure(*cm, getResult());
+			transimpPart->setStage(*transPart);
+			transimpPart->setStageBias(*biasPart);
+			transPart->addTransimpedancePart(*transimpPart);
+			getResult().addTransimpedancePart(*transimpPart);
+		}
 	}
 
 	void Partitioning::partitioningThirdStage(const StructRec::StructureCircuits &circuits)
@@ -454,7 +567,7 @@ namespace Partitioning {
 				const StructRec::Structure & structure = * it;
 
 
-				if(getResult().structureAlreadyClassified(structure) && (getResult().getPart(structure).isTransconductancePart() || getResult().getPart(structure).isLoadPart()))
+				if(getResult().structureAlreadyClassified(structure) && (getResult().getPart(structure).isTransconductancePart() || getResult().getPart(structure).isLoadPart() || getResult().getPart(structure).isTransimpedancePart()))
 				{
 
 					if(hasStageOutputNetConnection(netGatePin1, getResult().getPart(structure), circuits)
@@ -467,9 +580,14 @@ namespace Partitioning {
 							childNumberTransStruc = 1;
 							childNumberBiasStruc = 2;
 							if(getResult().getPart(structure).isLoadPart() ||
-									getResult().getTransconductancePart(structure).isFirstStage())
+									(getResult().getPart(structure).isTransconductancePart() && getResult().getTransconductancePart(structure).isFirstStage()))
 								type = "primarySecondStage";
-							else if(getResult().getTransconductancePart(structure).isPrimarySecondStage())
+							else if(getResult().getPart(structure).isTransconductancePart() && getResult().getTransconductancePart(structure).isPrimarySecondStage())
+								type = "thirdStage";
+							else if(getResult().getPart(structure).isTransimpedancePart()
+									&& getResult().getTransimpedancePart(structure).hasStage()
+									&& (getResult().getTransimpedancePart(structure).getStage().isPrimarySecondStage()
+										|| getResult().getTransimpedancePart(structure).getStage().isSecondarySecondStage()))
 								type = "thirdStage";
 						}
 
@@ -487,7 +605,8 @@ namespace Partitioning {
 				const StructRec::Structure & structure = * it;
 				if(getResult().structureAlreadyClassified(structure)
 						&& (getResult().getPart(structure).isTransconductancePart() ||
-								getResult().getPart(structure).isLoadPart()))
+								getResult().getPart(structure).isLoadPart() ||
+								getResult().getPart(structure).isTransimpedancePart()))
 				{
 					if(hasStageOutputNetConnection(netGatePin2, getResult().getPart(structure), circuits)
 							&& (hasVoltageBiasOutputConnection(inverter->findNet(gatePin1))
@@ -498,9 +617,14 @@ namespace Partitioning {
 								childNumberTransStruc = 2;
 								childNumberBiasStruc = 1;
 								if(getResult().getPart(structure).isLoadPart() ||
-									getResult().getTransconductancePart(structure).isFirstStage())
+									(getResult().getPart(structure).isTransconductancePart() && getResult().getTransconductancePart(structure).isFirstStage()))
 									type = "primarySecondStage";
-								else if(getResult().getTransconductancePart(structure).isPrimarySecondStage())
+								else if(getResult().getPart(structure).isTransconductancePart() && getResult().getTransconductancePart(structure).isPrimarySecondStage())
+									type = "thirdStage";
+								else if(getResult().getPart(structure).isTransimpedancePart()
+										&& getResult().getTransimpedancePart(structure).hasStage()
+										&& (getResult().getTransimpedancePart(structure).getStage().isPrimarySecondStage()
+											|| getResult().getTransimpedancePart(structure).getStage().isSecondarySecondStage()))
 									type = "thirdStage";
 							}
 
@@ -1162,7 +1286,9 @@ namespace Partitioning {
 			else if((hasSecondStageOutputConnection(netMinus, circuits) && hasFirstStageOutputConnection(netPlus, circuits))
 					|| (hasSecondStageOutputConnection(netPlus, circuits) && hasFirstStageOutputConnection(netMinus, circuits))
 					|| (hasThirdStageOutputConnection(netMinus, circuits) && hasSecondStageOutputConnection(netPlus, circuits))
-					|| (hasThirdStageOutputConnection(netPlus, circuits) && hasSecondStageOutputConnection(netMinus, circuits)))
+					|| (hasThirdStageOutputConnection(netPlus, circuits) && hasSecondStageOutputConnection(netMinus, circuits))
+					|| (hasThirdStageOutputConnection(netMinus, circuits) && hasFirstStageOutputConnection(netPlus, circuits))
+					|| (hasThirdStageOutputConnection(netPlus, circuits) && hasFirstStageOutputConnection(netMinus, circuits)))
 			{
 				CapacitancePart * capPart = new CapacitancePart(getIdCapacitancePart());
 				capPart->setType("compensation");
@@ -1970,6 +2096,22 @@ namespace Partitioning {
 				hasConnection = hasSecondStageOutputConnection(net, circuits);
 			}
 		}
+		else if(stage.isTransimpedancePart())
+		{
+			const TransimpedancePart & transimp = getResult().getTransimpedancePart(**stage.getMainStructures().begin());
+			if(transimp.hasStage())
+			{
+				TransconductancePart & owningStage = transimp.getStage();
+				if(owningStage.isFirstStage())
+				{
+					hasConnection = hasFirstStageOutputConnection(net, circuits);
+				}
+				else if(owningStage.isPrimarySecondStage() || owningStage.isSecondarySecondStage())
+				{
+					hasConnection = hasSecondStageOutputConnection(net, circuits);
+				}
+			}
+		}
 		else if(stage.isLoadPart())
 		{
 			LoadPart & loadPart = getResult().getLoadPart(**stage.getMainStructures().begin());
@@ -2427,6 +2569,19 @@ namespace Partitioning {
 				}
 			}
 		}
+
+		if(!hasConnection && getResult().hasTransimpedanceParts())
+		{
+			for(auto & transimp : getResult().getAllTransimpedanceParts())
+			{
+				if(transimp->getOutputNet().getIdentifier() == net.getIdentifier())
+				{
+					hasConnection = true;
+					break;
+				}
+			}
+		}
+
 		return hasConnection;
 
 	}
@@ -2598,6 +2753,11 @@ namespace Partitioning {
 	int & Partitioning::getIdBiasPart()
 	{
 		return idBiasPart_;
+	}
+
+	int & Partitioning::getIdTransimpedancePart()
+	{
+		return idTransimpedancePart_;
 	}
 
 	bool Partitioning::parentHasDevicesInOtherStructure(const StructRec::Structure & structure,const StructRec::Structure & other ) const

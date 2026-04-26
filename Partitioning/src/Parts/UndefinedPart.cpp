@@ -110,5 +110,10 @@ namespace Partitioning {
 		return false;
 	}
 
+	bool UndefinedPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 }
 

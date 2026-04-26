@@ -38,6 +38,7 @@
 #include "Synthesis/incl/Library/HierarchyLevel4/NonInvertingStages.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/AmplificationStagesSubBlockLevel.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/Transconductances.h"
+#include "Synthesis/incl/Library/HierarchyLevel3/Transimpedances.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/Loads.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/LoadParts.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/StageBiases.h"
@@ -59,6 +60,9 @@ namespace Synthesis {
 	const Core::TerminalName NonInvertingStages::IN2_TERMINAL_ = Core::TerminalName("In2");
 	const Core::TerminalName NonInvertingStages::OUT1_TERMINAL_ = Core::TerminalName("Out1");
 	const Core::TerminalName NonInvertingStages::OUT2_TERMINAL_ = Core::TerminalName("Out2");
+
+	const Core::TerminalName NonInvertingStages::IN_TERMINAL_ = Core::TerminalName("In");
+	const Core::TerminalName NonInvertingStages::OUT_TERMINAL_ = Core::TerminalName("Out");
 
 	const Core::TerminalName NonInvertingStages::SOURCETRANSCONDUCTANCE_TERMINAL_ = Core::TerminalName("SourceTransconductance");
 	const Core::TerminalName NonInvertingStages::SOURCETRANSCONDUCTANCE1_TERMINAL_ = Core::TerminalName("SourceTransconductance1");
@@ -119,6 +123,7 @@ namespace Synthesis {
 
     const Core::InstanceName NonInvertingStages::LOAD_ = Core::InstanceName("Load");
 	const Core::InstanceName NonInvertingStages::TRANSCONDUCTANCE_ = Core::InstanceName("Transconductance");
+	const Core::InstanceName NonInvertingStages::TRANSIMPEDANCE_ = Core::InstanceName("Transimpedance");
 	const Core::InstanceName NonInvertingStages::STAGEBIAS_ = Core::InstanceName("StageBias");
 	const Core::InstanceName NonInvertingStages::STAGEBIAS1_ = Core::InstanceName("StageBias1");
 	const Core::InstanceName NonInvertingStages::STAGEBIAS2_ = Core::InstanceName("StageBias2");
@@ -129,6 +134,10 @@ namespace Synthesis {
 	const Core::NetId NonInvertingStages::IN2_NET_ = Core::NetName("in2").createRootIdentifier();
 	const Core::NetId NonInvertingStages::OUT1_NET_ = Core::NetName("out1").createRootIdentifier();
 	const Core::NetId NonInvertingStages::OUT2_NET_ = Core::NetName("out2").createRootIdentifier();
+
+	const Core::NetId NonInvertingStages::IN_NET_ = Core::NetName("in").createRootIdentifier();
+	const Core::NetId NonInvertingStages::OUT_NET_ = Core::NetName("out").createRootIdentifier();
+	const Core::NetId NonInvertingStages::INTRANSIMPEDANCE_NET_ = Core::NetName("inTransimpedance").createRootIdentifier();
 
 	const Core::NetId NonInvertingStages::SOURCETRANSCONDUCTANCE_NET_ = Core::NetName("sourceTransconductance").createRootIdentifier();
 	const Core::NetId NonInvertingStages::SOURCETRANSCONDUCTANCE1_NET_ = Core::NetName("sourceTransconductance1").createRootIdentifier();
@@ -515,6 +524,42 @@ namespace Synthesis {
 		return nonInvertingStages;
 	}
 
+	std::vector<const Core::Circuit *> NonInvertingStages::createNonInvertingSecondStagesViaTransimpedance(int caseNumber) const
+	{
+		eraseTemporaryFunctionalblocks();
+		int index = 1;
+		std::vector<const Core::Circuit*> nonInvertingStages;
+
+		switch(caseNumber) {
+		case 1: { // Pmos transimpedance ↔ Nmos single-Tx ↔ Nmos stage bias
+			nonInvertingStages = createNonInvertingSecondStagesViaTransimpedance(
+					getAmplificationStagesSubBlockLevel().getTransconductances().getSingleTransistorTransconductanceNmos(),
+					getAmplificationStagesSubBlockLevel().getTransimpedances().getSimpleCurrentMirrorTransimpedancesPmos(),
+					getAmplificationStagesSubBlockLevel().getStageBiases().getAllStageBiasesNmos(),
+					index);
+			break;
+		}
+		case 2: { // Nmos transimpedance ↔ Pmos single-Tx ↔ Pmos stage bias
+			nonInvertingStages = createNonInvertingSecondStagesViaTransimpedance(
+					getAmplificationStagesSubBlockLevel().getTransconductances().getSingleTransistorTransconductancePmos(),
+					getAmplificationStagesSubBlockLevel().getTransimpedances().getSimpleCurrentMirrorTransimpedancesNmos(),
+					getAmplificationStagesSubBlockLevel().getStageBiases().getAllStageBiasesPmos(),
+					index);
+			break;
+		}
+		case 3: {
+			nonInvertingStages.clear();
+			break;
+		}
+		default: {
+			logDebug("default");
+			break;
+		}
+		}
+		getTemporaryNonInvertingStages() = nonInvertingStages;
+		return nonInvertingStages;
+	}
+
 	std::vector<const Core::Circuit *> NonInvertingStages::getFeedbackNonInvertingStagesPmosTransconductance() const
 	{
 		assert(!feedbackNonInvertingStagesPmosTransconductance_.empty());
@@ -663,6 +708,28 @@ namespace Synthesis {
 		return nonInvertingStages;
 	}
 
+	std::vector<const Core::Circuit*> NonInvertingStages::createNonInvertingSecondStagesViaTransimpedance(const Core::Circuit & transconductance,
+								std::vector<const Core::Circuit*> transimpedances,
+								std::vector<const Core::Circuit*> stageBiases, int & index) const
+	{
+		std::vector<const Core::Circuit *> nonInvertingStages;
+		for(auto & transimpedance : transimpedances)
+		{
+			for(auto & stageBias : stageBiases)
+			{
+				Core::Instance & transconductanceInstance = createInstance(transconductance, TRANSCONDUCTANCE_);
+				Core::Instance & transimpedanceInstance = createInstance(*transimpedance, TRANSIMPEDANCE_);
+				Core::Instance & stageBiasInstance = createInstance(*stageBias, STAGEBIAS_);
+				const Core::Circuit & nonInvertingStage = createNonInvertingSecondStageViaTransimpedance(
+						transconductanceInstance, transimpedanceInstance, stageBiasInstance, index);
+
+				nonInvertingStages.push_back(&nonInvertingStage);
+				index++;
+			}
+		}
+		return nonInvertingStages;
+	}
+
 	std::vector<const Core::Circuit*> NonInvertingStages::createFeedbackTransconductanceNonInvertingStages(const Core::Circuit & transconductance, 
 								std::vector<const Core::Circuit*> loads, std::vector<const Core::Circuit*> stageBiases, int & index) const ///
 	{
@@ -780,6 +847,50 @@ namespace Synthesis {
 		stageBias.setCircuit(*nonInvertingStage);
 
         return *nonInvertingStage;
+	}
+
+	const Core::Circuit& NonInvertingStages::createNonInvertingSecondStageViaTransimpedance(Core::Instance & transconductance,
+								Core::Instance & transimpedance, Core::Instance & stageBias, int index) const
+	{
+		Core::Circuit * nonInvertingStage = new Core::Circuit;
+
+		Core::CircuitIds circuitIds;
+		Core::CircuitId nonInvertingStageId = circuitIds.nonInvertingSecondStage(index);
+		nonInvertingStageId.setTechType(transconductance.getMaster().getCircuitIdentifier().getTechType());
+		nonInvertingStage->setCircuitIdentifier(nonInvertingStageId);
+
+		std::vector<Core::NetId> netNames;
+		std::map<Core::TerminalName, Core::NetId> terminalToNetMap;
+
+		netNames.push_back(IN_NET_);
+		netNames.push_back(OUT_NET_);
+		netNames.push_back(INTRANSIMPEDANCE_NET_);
+		netNames.push_back(SOURCEPMOS_NET_);
+		netNames.push_back(SOURCENMOS_NET_);
+
+		terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(IN_TERMINAL_, IN_NET_));
+		terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(OUT_TERMINAL_, OUT_NET_));
+		terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(SOURCENMOS_TERMINAL_, SOURCENMOS_NET_));
+		terminalToNetMap.insert(std::pair<Core::TerminalName, Core::NetId>(SOURCEPMOS_TERMINAL_, SOURCEPMOS_NET_));
+
+		addStageBiasNets(netNames, terminalToNetMap, stageBias);
+
+		addNetsToCircuit(*nonInvertingStage, netNames);
+		addTerminalsToCircuit(*nonInvertingStage, terminalToNetMap);
+
+		nonInvertingStage->addInstance(transconductance);
+		nonInvertingStage->addInstance(transimpedance);
+		nonInvertingStage->addInstance(stageBias);
+
+		connectInstanceTerminalsOfSingleTransistorTransconductance(*nonInvertingStage, transconductance);
+		connectInstanceTerminalsOfTransimpedance(*nonInvertingStage, transimpedance);
+		connectInstanceTerminalsOfStageBiasForTransimpedanceStage(*nonInvertingStage, stageBias);
+
+		transconductance.setCircuit(*nonInvertingStage);
+		transimpedance.setCircuit(*nonInvertingStage);
+		stageBias.setCircuit(*nonInvertingStage);
+
+		return *nonInvertingStage;
 	}
 
 	const Core::Circuit& NonInvertingStages::createFeedbackTransconductanceNonInvertingStage(Core::Instance & transconductance, // feedback
@@ -1105,6 +1216,58 @@ namespace Synthesis {
 		{
 			connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::OUT1_TERMINAL_, OUT1_NET_);
 			connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::OUT2_TERMINAL_, OUT2_NET_);
+		}
+	}
+
+	void NonInvertingStages::connectInstanceTerminalsOfSingleTransistorTransconductance(Core::Circuit & nonInvertingStage, Core::Instance & transconductance) const
+	{
+		connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::IN_TERMINAL_,  IN_NET_);
+		connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::OUT_TERMINAL_, INTRANSIMPEDANCE_NET_);
+		if(transconductance.getMaster().getCircuitIdentifier().getTechType() == Core::TechType::n())
+		{
+			connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::SOURCE_TERMINAL_, SOURCENMOS_NET_);
+		}
+		else
+		{
+			connectInstanceTerminal(nonInvertingStage, transconductance, Transconductances::SOURCE_TERMINAL_, SOURCEPMOS_NET_);
+		}
+	}
+
+	void NonInvertingStages::connectInstanceTerminalsOfTransimpedance(Core::Circuit & nonInvertingStage, Core::Instance & transimpedance) const
+	{
+		connectInstanceTerminal(nonInvertingStage, transimpedance, Transimpedances::INPUT_TERMINAL_,  INTRANSIMPEDANCE_NET_);
+		connectInstanceTerminal(nonInvertingStage, transimpedance, Transimpedances::OUTPUT_TERMINAL_, OUT_NET_);
+		if(transimpedance.getMaster().getCircuitIdentifier().getTechType() == Core::TechType::n())
+		{
+			connectInstanceTerminal(nonInvertingStage, transimpedance, Transimpedances::SOURCE_TERMINAL_, SOURCENMOS_NET_);
+		}
+		else
+		{
+			connectInstanceTerminal(nonInvertingStage, transimpedance, Transimpedances::SOURCE_TERMINAL_, SOURCEPMOS_NET_);
+		}
+	}
+
+	void NonInvertingStages::connectInstanceTerminalsOfStageBiasForTransimpedanceStage(Core::Circuit & nonInvertingStage, Core::Instance & stageBias) const
+	{
+		connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::OUT_TERMINAL_, OUT_NET_);
+		if(stageBias.getMaster().getCircuitIdentifier().getTechType() == Core::TechType::n())
+		{
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::SOURCE_TERMINAL_, SOURCENMOS_NET_);
+		}
+		else
+		{
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::SOURCE_TERMINAL_, SOURCEPMOS_NET_);
+		}
+
+		if(getDeviceNamesOfFlatCircuit(stageBias.getMaster()).size() == 1)
+		{
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::IN_TERMINAL_, INPUTSTAGEBIAS_NET_);
+		}
+		else
+		{
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::INSOURCE_TERMINAL_, INSOURCESTAGEBIAS_NET_);
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::INOUTPUT_TERMINAL_, INOUTPUTSTAGEBIAS_NET_);
+			connectInstanceTerminal(nonInvertingStage, stageBias, StageBiases::INNER_TERMINAL_, INNERSTAGEBIAS_NET_);
 		}
 	}
 

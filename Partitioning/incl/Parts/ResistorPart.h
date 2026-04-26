@@ -70,6 +70,7 @@ namespace Partitioning {
 		bool isUndefinedPart() const;
 		bool isCommonModeSignalDetectorPart() const;
 		bool isPositiveFeedbackPart() const;
+		bool isTransimpedancePart() const;
 
 		std::string getType() const;
 

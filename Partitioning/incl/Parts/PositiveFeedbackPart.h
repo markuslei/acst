@@ -68,6 +68,7 @@ namespace Partitioning {
 		bool isUndefinedPart() const;
 		bool isResistorPart() const;
 		bool isCommonModeSignalDetectorPart() const;
+		bool isTransimpedancePart() const;
 
 		bool hasGateNetsConnectedToBiasOfFoldedPair(const Result & result) const;
 

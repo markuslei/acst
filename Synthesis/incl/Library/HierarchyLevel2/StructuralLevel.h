@@ -59,6 +59,7 @@ namespace Synthesis {
 		StructuralLevel(const DeviceLevel & deviceLevel, const AutomaticSizing::CircuitInformation & circuitInformation);
 		~StructuralLevel();
 
+		const DeviceLevel & getDeviceLevel() const;
 		const VoltageBiases & getVoltageBiases() const;
 		const CurrentBiases & getCurrentBiases() const;
         const CurrentMirrors & getCurrentMirrors() const;
@@ -69,6 +70,7 @@ namespace Synthesis {
 
 	private:
 
+		const DeviceLevel * deviceLevel_;
 		VoltageBiases * voltageBiases_;
 		CurrentBiases * currentBiases_;
         CurrentMirrors * currentMirrors_;

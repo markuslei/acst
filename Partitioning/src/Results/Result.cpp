@@ -53,6 +53,7 @@ Result::Result()
 Result::~Result()
 {
 	eraseTransconductanceParts();
+	eraseTransimpedanceParts();
 	eraseLoadParts();
 	eraseBiasParts();
 	eraseCapacitanceParts();
@@ -87,6 +88,14 @@ std::string Result::toStr() const
 	for(std::map<PartId, LoadPart*>::const_iterator it_loadParts = loadParts_.begin(); it_loadParts != loadParts_.end(); it_loadParts++)
 	{
 		LoadPart * part = it_loadParts->second;
+		stream << part->toStr();
+	}
+	stream << std::endl;
+
+	stream << "TransimpedanceParts:" << std::endl;
+	for(auto & it : transimpedanceParts_)
+	{
+		TransimpedancePart * part = it.second;
 		stream << part->toStr();
 	}
 	stream << std::endl;
@@ -353,6 +362,11 @@ void Result::addTransconductancePart(TransconductancePart& part)
 	transconductanceParts_.insert(std::pair<PartId, TransconductancePart* >(part.getPartId(),& part));
 }
 
+void Result::addTransimpedancePart(TransimpedancePart& part)
+{
+	transimpedanceParts_.insert(std::pair<PartId, TransimpedancePart* >(part.getPartId(),& part));
+}
+
 void Result::addLoadPart(LoadPart& part)
 {
 	loadParts_.insert(std::pair<PartId, LoadPart* >(part.getPartId(),& part));
@@ -416,6 +430,48 @@ const TransconductancePart& Result::getTransconductancePart(
 		}
 	}
 	return * transPart;
+}
+
+TransimpedancePart& Result::getTransimpedancePart(const StructRec::Structure& structure)
+{
+	TransimpedancePart * transimpPart = NULL;
+	Part * part = NULL;
+	assert(structureAlreadyClassified(structure));
+	std::vector<const StructRec::Structure*> arrays = structure.getArrayChildren();
+	for(auto& it : arrays)
+	{
+		const StructRec::Structure & array = *it;
+		if(transistors_.find(array.getIdentifier()) != transistors_.end())
+		{
+			Transistor * comp = transistors_.find(array.getIdentifier())->second;
+			part = & comp->getPart();
+			assert(part->isTransimpedancePart(), "Is not a transimpedance part.");
+			transimpPart = transimpedanceParts_.find(part->getPartId())->second;
+			break;
+		}
+	}
+	return * transimpPart;
+}
+
+const TransimpedancePart& Result::getTransimpedancePart(const StructRec::Structure& structure) const
+{
+	TransimpedancePart * transimpPart = NULL;
+	Part * part = NULL;
+	assert(structureAlreadyClassified(structure));
+	std::vector<const StructRec::Structure*> arrays = structure.getArrayChildren();
+	for(auto& it : arrays)
+	{
+		const StructRec::Structure & array = *it;
+		if(transistors_.find(array.getIdentifier()) != transistors_.end())
+		{
+			Transistor * comp = transistors_.find(array.getIdentifier())->second;
+			part = & comp->getPart();
+			assert(part->isTransimpedancePart(), "Is not a transimpedance part.");
+			transimpPart = transimpedanceParts_.find(part->getPartId())->second;
+			break;
+		}
+	}
+	return * transimpPart;
 }
 
 BiasPart& Result::getBiasPart(const StructRec::Structure& structure)
@@ -514,6 +570,17 @@ std::vector<TransconductancePart*> Result::getAllTransconductanceParts() const
 	return transParts;
 }
 
+std::vector<TransimpedancePart*> Result::getAllTransimpedanceParts() const
+{
+	assert(hasTransimpedanceParts());
+	std::vector<TransimpedancePart*> parts;
+	for(auto & it : transimpedanceParts_)
+	{
+		parts.push_back(it.second);
+	}
+	return parts;
+}
+
 std::vector<LoadPart*> Result::getAllLoadParts() const
 {
 	assert(hasLoadParts());
@@ -595,6 +662,11 @@ bool Result::hasTransconductanceParts() const
 bool Result::hasLoadParts() const
 {
 	return !loadParts_.empty();
+}
+
+bool Result::hasTransimpedanceParts() const
+{
+	return !transimpedanceParts_.empty();
 }
 
 bool Result::hasBiasParts() const
@@ -1545,6 +1617,14 @@ void Result::eraseLoadParts()
 
 }
 
+void Result::eraseTransimpedanceParts()
+{
+	for(auto & it : transimpedanceParts_)
+	{
+		delete it.second;
+	}
+}
+
 void Result::eraseBiasParts()
 {
 	for(std::map<PartId, BiasPart*>::iterator it =  biasParts_.begin(); it != biasParts_.end(); it++)
@@ -1620,13 +1700,73 @@ void Result::writeXmlPartitioningResult(Control::OutputFile & file)const
 	Core::RapidXmlUtils::writeDateXML(root, doc);
 	Core::XmlNode & headLine = Core::RapidXmlUtils::addNode(root, doc, "circuit_partitioning_results");
 
+	//new
+	//Result never seems to have a second stage?
+	bool secondstage_detected = hasSecondStage();
+
 //	if(hasTransconductanceParts())
 	{
-		Core::XmlNode &transPartNode = Core::RapidXmlUtils::addNode(headLine, doc, "gmParts");
+		// Core::XmlNode &transPartNode = Core::RapidXmlUtils::addNode(headLine, doc, "gmParts");
+		// for(std::map<PartId, TransconductancePart*>::const_iterator it_transParts = transconductanceParts_.begin(); it_transParts != transconductanceParts_.end(); it_transParts++)
+		// {
+		// 	TransconductancePart * part = it_transParts->second;
+		// 	part->writeXml(transPartNode, doc);
 		for(std::map<PartId, TransconductancePart*>::const_iterator it_transParts = transconductanceParts_.begin(); it_transParts != transconductanceParts_.end(); it_transParts++)
 		{
 			TransconductancePart * part = it_transParts->second;
-			part->writeXml(transPartNode, doc);
+			part->writeXml(headLine, doc);
+			std::vector<BiasPart*> bias_parts = part->getBiasPart();
+			if(part->isFirstStage())
+			{
+				Core::XmlNode &firstStageNode = Core::RapidXmlUtils::addNode(headLine, doc, "firstStage");
+				Core::XmlNode &gmPartNodeFirstStage = Core::RapidXmlUtils::addNode(firstStageNode, doc, "gmParts");
+				Core::XmlNode &biasPartNodeFirstStage = Core::RapidXmlUtils::addNode(firstStageNode, doc, "biasParts");
+				Core::XmlNode &loadPartNodeFirstStage = Core::RapidXmlUtils::addNode(firstStageNode, doc, "loadParts");
+
+				std::vector<LoadPart*> load_parts = part->getLoadPart();
+
+//				for(BiasPart* const& bp :bias_parts)
+//				{
+//					bp->writeXml(firstStageNode, doc);
+//				}
+//				bias_parts[0]->writeXml(firstStageNode, doc);
+				for(auto bp :bias_parts)
+				{
+					bp->writeXml(biasPartNodeFirstStage, doc);
+				}
+				part->writeXml(gmPartNodeFirstStage, doc);
+				for(auto lp :load_parts)
+				{
+					lp->writeXml(loadPartNodeFirstStage, doc);
+				}
+			}
+			else if(part->isPrimarySecondStage())
+			{
+				Core::XmlNode &primarySecondStageNode = Core::RapidXmlUtils::addNode(headLine, doc, "primarySecondStage");
+				Core::XmlNode &gmPartNodePrimarySecondStage = Core::RapidXmlUtils::addNode(primarySecondStageNode, doc, "biasParts");
+				Core::XmlNode &biasPartNodePrimarySecondStage = Core::RapidXmlUtils::addNode(primarySecondStageNode, doc, "biasParts");
+				for(auto bp :bias_parts)
+				{
+					bp->writeXml(biasPartNodePrimarySecondStage, doc);
+				}
+				part->writeXml(gmPartNodePrimarySecondStage, doc);
+			}
+			else if(part->isSecondarySecondStage())
+			{
+				Core::XmlNode &secondarySecondStageNode = Core::RapidXmlUtils::addNode(headLine, doc, "secondarySecondStage");
+				Core::XmlNode &gmPartNodeSecondarySecondStage = Core::RapidXmlUtils::addNode(secondarySecondStageNode, doc, "biasParts");
+				Core::XmlNode &biasPartNodeSecondarySecondStage = Core::RapidXmlUtils::addNode(secondarySecondStageNode, doc, "biasParts");
+				for(auto bp :bias_parts)
+				{
+					bp->writeXml(biasPartNodeSecondarySecondStage, doc);
+				}
+				part->writeXml(gmPartNodeSecondarySecondStage, doc);
+			}
+			else
+			{
+				Core::XmlNode &otherTransconductancePartsNode = Core::RapidXmlUtils::addNode(headLine, doc, "otherTransconductanceParts");
+				part->writeXml(otherTransconductancePartsNode, doc);
+			}
 		}
 	}
 
@@ -1637,6 +1777,15 @@ void Result::writeXmlPartitioningResult(Control::OutputFile & file)const
 		{
 			LoadPart * part = it_loadParts->second;
 			part->writeXml(loadPartNode, doc);
+		}
+	}
+
+	{
+		Core::XmlNode &transimpedanceNode = Core::RapidXmlUtils::addNode(headLine, doc, "transimpedanceParts");
+		for(auto & it : transimpedanceParts_)
+		{
+			TransimpedancePart * part = it.second;
+			part->writeXml(transimpedanceNode, doc);
 		}
 	}
 

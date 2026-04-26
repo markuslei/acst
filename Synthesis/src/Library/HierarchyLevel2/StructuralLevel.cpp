@@ -50,6 +50,7 @@
 namespace Synthesis {
 
     		StructuralLevel::StructuralLevel(const DeviceLevel & deviceLevel, const AutomaticSizing::CircuitInformation & circuitInformation) :
+                deviceLevel_(&deviceLevel),
                 voltageBiases_(nullptr),
                 currentBiases_(nullptr),
                 currentMirrors_(nullptr),
@@ -78,6 +79,12 @@ namespace Synthesis {
 			delete currentMirrors_;
 			delete differentialPair_;
 			delete analogInverters_;
+        }
+
+		const DeviceLevel & StructuralLevel::getDeviceLevel() const
+        {
+            assert(deviceLevel_ != nullptr);
+            return *deviceLevel_;
         }
 
 		const VoltageBiases & StructuralLevel::getVoltageBiases() const

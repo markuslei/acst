@@ -1,0 +1,39 @@
+** Name: SimpleThreeStageOpAmp_SimpleOpAmp47_1_1
+
+.MACRO SimpleThreeStageOpAmp_SimpleOpAmp47_1_1 ibias in1 in2 out sourceNmos sourcePmos
+mDiodeTransistorNmos1 outSourceVoltageBiasXXnXX1 outSourceVoltageBiasXXnXX1 sourceNmos sourceNmos nmos4 L=6e-6 W=31e-6
+mDiodeTransistorNmos2 ibias ibias outSourceVoltageBiasXXnXX1 outSourceVoltageBiasXXnXX1 nmos4 L=6e-6 W=6e-6
+mDiodeTransistorPmos3 outVoltageBiasXXpXX2 outVoltageBiasXXpXX2 sourcePmos sourcePmos pmos4 L=1e-6 W=76e-6
+mDiodeTransistorPmos4 outVoltageBiasXXpXX1 outVoltageBiasXXpXX1 sourcePmos sourcePmos pmos4 L=10e-6 W=12e-6
+mNormalTransistorNmos5 outVoltageBiasXXpXX2 outSourceVoltageBiasXXnXX1 sourceNmos sourceNmos nmos4 L=6e-6 W=167e-6
+mNormalTransistorNmos6 outVoltageBiasXXpXX1 outSourceVoltageBiasXXnXX1 sourceNmos sourceNmos nmos4 L=6e-6 W=38e-6
+mNormalTransistorNmos8 outFirstStage ibias FirstStageYsourceGCC2 FirstStageYsourceGCC2 nmos4 L=6e-6 W=7e-6
+mNormalTransistorNmos9 FirstStageYinnerSourceLoad2 ibias FirstStageYsourceGCC1 FirstStageYsourceGCC1 nmos4 L=6e-6 W=7e-6
+mNormalTransistorNmos10 FirstStageYsourceGCC1 outSourceVoltageBiasXXnXX1 sourceNmos sourceNmos nmos4 L=6e-6 W=72e-6
+mNormalTransistorNmos11 FirstStageYsourceGCC2 outSourceVoltageBiasXXnXX1 sourceNmos sourceNmos nmos4 L=6e-6 W=72e-6
+mNormalTransistorPmos13 outFirstStage outVoltageBiasXXpXX1 FirstStageYinnerTransistorStack2Load2 FirstStageYinnerTransistorStack2Load2 pmos4 L=10e-6 W=125e-6
+mNormalTransistorPmos14 FirstStageYinnerSourceLoad2 outVoltageBiasXXpXX1 FirstStageYinnerTransistorStack1Load2 FirstStageYinnerTransistorStack1Load2 pmos4 L=10e-6 W=125e-6
+mNormalTransistorPmos15 FirstStageYinnerTransistorStack1Load2 FirstStageYinnerSourceLoad2 sourcePmos sourcePmos pmos4 L=9e-6 W=167e-6
+mNormalTransistorPmos16 FirstStageYinnerTransistorStack2Load2 FirstStageYinnerSourceLoad2 sourcePmos sourcePmos pmos4 L=9e-6 W=167e-6
+mNormalTransistorPmos17 FirstStageYsourceGCC1 in1 FirstStageYsourceTransconductance FirstStageYsourceTransconductance pmos4 L=5e-6 W=76e-6
+mNormalTransistorPmos18 FirstStageYsourceGCC2 in2 FirstStageYsourceTransconductance FirstStageYsourceTransconductance pmos4 L=5e-6 W=76e-6
+mNormalTransistorPmos19 FirstStageYsourceTransconductance outVoltageBiasXXpXX2 sourcePmos sourcePmos pmos4 L=1e-6 W=22e-6
+*Second Stage
+mNormalTransistorNmos20 SecondStageTransconductance outFirstStage sourceNmos sourceNmos nmos4
+mNormalTransistorPmos21 SecondStageTransconductance SecondStageTransconductance sourcePmos sourcePmos pmos4
+mNormalTransistorPmos22 outSecondStage SecondStageTransconductance sourcePmos sourcePmos pmos4
+mNormalTransistorNmos23 outSecondStage outVoltageBiasXXpXX2 sourceNmos sourceNmos nmos4
+*Third Stage
+mNormalTransistorNmos7 out outSecondStage sourceNmos sourceNmos nmos4 L=8e-6 W=74e-6
+mNormalTransistorPmos12 out outVoltageBiasXXpXX2 sourcePmos sourcePmos pmos4 L=1e-6 W=534e-6
+*Load
+capacitor1 out sourceNmos 10e-12
+*Compensation
+capacitor2 outFirstStage out 3.20001e-12
+capacitor3 outSecondStage out
+.EOM SimpleThreeStageOpAmp_SimpleOpAmp47_1_1
+
+
+
+
+.END

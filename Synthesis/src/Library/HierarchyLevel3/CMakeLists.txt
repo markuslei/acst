@@ -40,10 +40,11 @@ entering_message()
 
 
 
-add_source(Synthesis 
+add_source(Synthesis
         AmplificationStagesSubBlockLevel.cpp
         LoadParts.cpp
         Loads.cpp
         StageBiases.cpp
         Transconductances.cpp
+        Transimpedances.cpp
 )

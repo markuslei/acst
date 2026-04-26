@@ -1,0 +1,23 @@
+acst — analog circuit analysis, sizing and synthesis environment
+=================================================================
+
+Copyright (c) 2021 Chair of Electronic Design Automation,
+                   TU München, Arcisstrasse 21, D-80333 München, Germany
+Copyright (c) 2026 Chair of Electronic Design Automation,
+                   TU München, Arcisstrasse 21, D-80333 München, Germany
+
+Released under the MIT License — see LICENSE.
+
+
+Original authors (2021)
+-----------------------
+  Inga Abel          <inga.abel@tum.de>
+  Maximilian Neuner  <maximilian.neuner@tum.de>
+  Michael Eick       <michael.eick@tum.de>
+
+
+Three-stage op-amp extension (2026)
+-----------------------------------
+  Markus Leibl       <markusleibl@tum.de>
+    - Partitioning: TransimpedancePart recognition for non-inverting second stages.
+    - Synthesis: Complete 3-stage opamp synthesis including new TransImpedance block on HL3

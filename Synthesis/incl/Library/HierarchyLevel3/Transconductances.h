@@ -69,6 +69,9 @@ namespace Synthesis
 			const Core::Circuit & getSimpleTransconductancePmos2();
 			const Core::Circuit &  getSimpleTransconductanceNmos() const;
 
+			const Core::Circuit &  getSingleTransistorTransconductancePmos() const;
+			const Core::Circuit &  getSingleTransistorTransconductanceNmos() const;
+
 			const Core::Circuit &  getFeedbackTransconductancePmos() const;
 			const Core::Circuit &  getFeedbackTransconductanceNmos() const;
 
@@ -77,6 +80,9 @@ namespace Synthesis
 			std::string toStr() const;
 
 		public:
+			static const Core::TerminalName IN_TERMINAL_;
+			static const Core::TerminalName OUT_TERMINAL_;
+
 			static const Core::TerminalName INPUT1_TERMINAL_;
 			static const Core::TerminalName INPUT2_TERMINAL_;
 
@@ -97,18 +103,21 @@ namespace Synthesis
 
 		private:
 			void initializeTransconductances(const StructuralLevel & structuralLevel, const AutomaticSizing::CircuitInformation & circuitInformation);
-			
+
 			const Core::Circuit & createSimpleTransconductance(const Core::Circuit & differentialPair, int & index);
 			const Core::Circuit& createFeedbackTransconductance(const Core::Circuit & differentialPair, int & index);
        		const Core::Circuit & createComplementaryTransconductance(const Core::Circuit & differentialPairPmos,
 			   						const Core::Circuit & differentialPairNmos, int & index);
+			const Core::Circuit & createSingleTransistorTransconductance(const Core::Circuit & normalTransistor, int & index);
 
-			void connectInstanceTerminalsOfSimpleTransconductance(Core::Circuit & transconductance, 
+			void connectInstanceTerminalsOfSimpleTransconductance(Core::Circuit & transconductance,
 									Core::Instance & differentialPair);
-			void connectInstanceTerminalsOfFeedbackTransconductance(Core::Circuit & transconductance, 
+			void connectInstanceTerminalsOfFeedbackTransconductance(Core::Circuit & transconductance,
 									Core::Instance & differentialPair1, Core::Instance & differentialPair2);
-			void connectInstanceTerminalsOfComplementaryTransconductance(Core::Circuit & transconductance, 
+			void connectInstanceTerminalsOfComplementaryTransconductance(Core::Circuit & transconductance,
 									Core::Instance & differentialPairNmos, Core::Instance & differentialPairPmos);
+			void connectInstanceTerminalsOfSingleTransistorTransconductance(Core::Circuit & transconductance,
+									Core::Instance & normalTransistor);
 
 		private:
 			static const Core::InstanceName DIFFERENTIALPAIR_;
@@ -116,6 +125,10 @@ namespace Synthesis
 			static const Core::InstanceName DIFFERENTIALPAIR2_;
 			static const Core::InstanceName DIFFERENTIALPAIRNMOS_;
 			static const Core::InstanceName DIFFERENTIALPAIRPMOS_;
+			static const Core::InstanceName NORMALTRANSISTOR_;
+
+			static const Core::NetId IN_NET_;
+			static const Core::NetId OUT_NET_;
 
 			static const Core::NetId INPUT1_NET_;
 			static const Core::NetId INPUT2_NET_;
@@ -143,6 +156,9 @@ namespace Synthesis
             const Core::Circuit* feedbackTransconductancePmos_;
 
 			const Core::Circuit * complementaryTransconductance_;
+
+			const Core::Circuit * singleTransistorTransconductanceNmos_;
+			const Core::Circuit * singleTransistorTransconductancePmos_;
 	};
 
     }

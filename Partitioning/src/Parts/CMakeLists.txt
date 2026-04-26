@@ -40,11 +40,12 @@ entering_message()
 
 add_subdirectory(PartId)
 
-add_source(Partitioning 
-    BiasPart.cpp 
+add_source(Partitioning
+    BiasPart.cpp
     LoadPart.cpp
     Part.cpp
 	TransconductancePart.cpp
+	TransimpedancePart.cpp
 	CapacitancePart.cpp
 	UndefinedPart.cpp
 	CommonModeSignalDetectorPart.cpp

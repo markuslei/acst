@@ -122,4 +122,9 @@ namespace Partitioning {
 		return false;
 	}
 
+	bool CommonModeSignalDetectorPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 }

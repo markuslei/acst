@@ -75,6 +75,7 @@ namespace Partitioning {
 		virtual bool isResistorPart() const = 0;
 		virtual bool isCommonModeSignalDetectorPart() const = 0;
 		virtual bool isPositiveFeedbackPart() const = 0;
+		virtual bool isTransimpedancePart() const = 0;
 
 		std::string toStr() const;
 

@@ -194,5 +194,10 @@ const std::string ResistorPart::COMPENSATION_STRING_ = "compensation";
 		return false;
 	}
 
+	bool ResistorPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 }
 

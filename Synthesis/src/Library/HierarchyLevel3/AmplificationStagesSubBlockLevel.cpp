@@ -38,6 +38,7 @@
 #include "Synthesis/incl/Library/HierarchyLevel3/Loads.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/LoadParts.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/Transconductances.h"
+#include "Synthesis/incl/Library/HierarchyLevel3/Transimpedances.h"
 #include "Synthesis/incl/Library/HierarchyLevel3/StageBiases.h"
 
 #include "Synthesis/incl/Library/HierarchyLevel2/StructuralLevel.h"
@@ -52,13 +53,16 @@ namespace Synthesis {
     		AmplificationStagesSubBlockLevel::AmplificationStagesSubBlockLevel(const StructuralLevel & structuralLevel, const AutomaticSizing::CircuitInformation & circuitInformation) :
 		                loads_(nullptr),
                 loadParts_(nullptr),
+                stageBiases_(nullptr),
                 transconductances_(nullptr),
-                stageBiases_(nullptr)
+                transimpedances_(nullptr)
             {
                 logDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>Create load parts");
                 loadParts_ = new LoadParts(structuralLevel);
                 logDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>Create transconductance");
                 transconductances_ = new Transconductances(structuralLevel, circuitInformation);
+                logDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>Create transimpedances");
+                transimpedances_ = new Transimpedances(structuralLevel);
                 logDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>Create stage biases");
                 stageBiases_ = new StageBiases(structuralLevel);
                 logDebug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>Create loads");
@@ -70,6 +74,7 @@ namespace Synthesis {
         {
 			delete loadParts_;
 			delete transconductances_;
+			delete transimpedances_;
 			delete stageBiases_;
 			delete loads_;
         }
@@ -92,6 +97,12 @@ namespace Synthesis {
             return * transconductances_;
         }
 
+        const Transimpedances & AmplificationStagesSubBlockLevel::getTransimpedances() const
+        {
+            assert(transimpedances_ != nullptr);
+            return * transimpedances_;
+        }
+
 		const StageBiases & AmplificationStagesSubBlockLevel::getStageBiases() const
         {
             assert(stageBiases_ != nullptr);
@@ -106,6 +117,7 @@ namespace Synthesis {
             oss << "<<<<<<<<<<<<<<<<<<<<<Amplification Stages Sub Block Level >>>>>>>>>>>>>>>>>>>>>>>>>>> " << std::endl;
             oss << getStageBiases().toStr() << std::endl;
             oss << getTransconductances().toStr() << std::endl;
+            oss << getTransimpedances().toStr() << std::endl;
             oss << getLoadParts().toStr() << std::endl;
             oss << getLoads().toStr() << std::endl;
             oss << std::endl;

@@ -60,6 +60,7 @@ namespace Partitioning {
 		bool isResistorPart() const;
 		bool isCommonModeSignalDetectorPart() const;
 		bool isPositiveFeedbackPart() const;
+		bool isTransimpedancePart() const;
 
 
 		void print(std::ostream & stream) const;

@@ -176,6 +176,11 @@ namespace Partitioning {
 	{
 		return false;
 	}
+
+	bool CapacitancePart::isTransimpedancePart() const
+	{
+		return false;
+	}
 }
 
 

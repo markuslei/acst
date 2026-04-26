@@ -66,11 +66,13 @@ namespace Partitioning {
 		int & getIdCommonModeSignalDetectorPart();
 		int & getIdResistorPart();
 		int & getIdPositiveFeedbackPart();
+		int & getIdTransimpedancePart();
 		Result & getResult() const;
 
 		void partitioningDifferentialPairs(const StructRec::StructureCircuits & circuits);
 		void partitioningBiasPartsOfDifferentialPairs(const StructRec::StructureCircuits & circuits);
 		void partitioningLoadPartsOfDifferentialPairs(const StructRec::StructureCircuits & circuits);
+		void partitioningNonInvertingSecondStage(const StructRec::StructureCircuits & circuits);
 		void partitioningSecondStage(const StructRec::StructureCircuits &circuits);
 		void partitioningThirdStage(const StructRec::StructureCircuits & circuit);
 		void findCommonModeSignalDetector(const StructRec::StructureCircuits &circuits);
@@ -181,6 +183,7 @@ namespace Partitioning {
 		int idCommonModeSignalDetectorPart_;
 		int idResistorPart_;
 		int idPositiveFeedbackPart_;
+		int idTransimpedancePart_;
 		Result * result_;
 	};
 

@@ -69,13 +69,16 @@ namespace Core {
         CircuitId voltageBiasLoad(int num=0);
         CircuitId stageBias(int num=0);
         CircuitId transconductance(int num =0);
+        CircuitId transimpedance(int num=0);
 
         CircuitId invertingStage(int num=0);
         CircuitId firstStage(int num=0);
         CircuitId feedbackStage(int num=0);
+        CircuitId nonInvertingSecondStage(int num=0);
 
         CircuitId simpleOpAmp(int num=0);
         CircuitId simpleTwoStageOpAmp(int num=0);
+        CircuitId simpleThreeStageOpAmp(int num=0);
         CircuitId fullyDifferentialOpAmp(int num=0);
         CircuitId fullyDifferentialTwoStageOpAmp(int num=0);
         CircuitId complementaryOpAmp(int num=0);
@@ -102,13 +105,16 @@ namespace Core {
         static const CircuitName VOLTAGEBIASLOAD_;
         static const CircuitName STAGEBIAS_;
         static const CircuitName TRANSCONDUCTANCE_;
+        static const CircuitName TRANSIMPEDANCE_;
 
         static const CircuitName INVERTINGSTAGE_;
         static const CircuitName FIRSTSTAGE_;
         static const CircuitName FEEDBACKSTAGE_;
+        static const CircuitName NONINVERTINGSECONDSTAGE_;
         
         static const CircuitName SINGLEOUTPUTOPAMP_;
         static const CircuitName SINGLEOUTPUTTWOSTAGEOPAMP_;
+        static const CircuitName SINGLEOUTPUTTHREESTAGEOPAMP_;
         static const CircuitName FULLYDIFFERENTIALOPAMP_;
         static const CircuitName FULLYDIFFERENTIALTWOSTAGEOPAMP_;
         static const CircuitName SYMMETRICALOPAMP_;

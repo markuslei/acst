@@ -77,6 +77,7 @@ namespace Synthesis
 			std::vector<const Core::Circuit *> createComplementaryNonInvertingStages(int caseNumber) const;
 			std::vector<const Core::Circuit *> createSymmetricalNonInvertingStages(int caseNumber) const;
 
+			std::vector<const Core::Circuit *> createNonInvertingSecondStagesViaTransimpedance(int caseNumber) const;
 
 			std::string toStr() const;
 		public:
@@ -84,6 +85,9 @@ namespace Synthesis
 			static const Core::TerminalName IN2_TERMINAL_;
 			static const Core::TerminalName OUT1_TERMINAL_;
 			static const Core::TerminalName OUT2_TERMINAL_;
+
+			static const Core::TerminalName IN_TERMINAL_;
+			static const Core::TerminalName OUT_TERMINAL_;
 
 			static const Core::TerminalName SOURCETRANSCONDUCTANCE_TERMINAL_;
 			static const Core::TerminalName SOURCETRANSCONDUCTANCE1_TERMINAL_;
@@ -152,6 +156,10 @@ namespace Synthesis
 
 			std::vector<const Core::Circuit*> createSimpleTransconductanceNonInvertingStages(const Core::Circuit & transconductance,
 													std::vector<const Core::Circuit*> loads, std::vector<const Core::Circuit*> stageBiases, int & index) const;
+
+			std::vector<const Core::Circuit*> createNonInvertingSecondStagesViaTransimpedance(const Core::Circuit & transconductance,
+													std::vector<const Core::Circuit*> transimpedances,
+													std::vector<const Core::Circuit*> stageBiases, int & index) const;
 			const Core::Circuit & getTransconductancePmos();
 			std::vector<const Core::Circuit*> getSimpleMixedLoadsNmos();
 			std::vector<const Core::Circuit*> getOneTransistorStageBiasPmos();
@@ -166,6 +174,8 @@ namespace Synthesis
 		
 			const Core::Circuit& createSimpleTransconductanceNonInvertingStage(Core::Instance & transconductance,
 											Core::Instance & load, Core::Instance & stageBias, int index) const;
+			const Core::Circuit& createNonInvertingSecondStageViaTransimpedance(Core::Instance & transconductance,
+											Core::Instance & transimpedance, Core::Instance & stageBias, int index) const;
 			const Core::Circuit& createFeedbackTransconductanceNonInvertingStage(Core::Instance & transconductance, 
 													Core::Instance & load, Core::Instance & stageBias1, Core::Instance & stageBias2, int index) const;
 			const Core::Circuit& createComplementaryTransconductanceNonInvertingStage(Core::Instance & transconductance,
@@ -186,6 +196,9 @@ namespace Synthesis
 
 
 			void connectInstanceTerminalsOfSimpleTransconductance(Core::Circuit & nonInvertingStage, Core::Instance & transconductance) const;
+			void connectInstanceTerminalsOfSingleTransistorTransconductance(Core::Circuit & nonInvertingStage, Core::Instance & transconductance) const;
+			void connectInstanceTerminalsOfTransimpedance(Core::Circuit & nonInvertingStage, Core::Instance & transimpedance) const;
+			void connectInstanceTerminalsOfStageBiasForTransimpedanceStage(Core::Circuit & nonInvertingStage, Core::Instance & stageBias) const;
 			void connectInstanceTerminalsOfFeedbackTransconductance(Core::Circuit & nonInvertingStage, Core::Instance & transconductance) const;
 			void connectInstanceTerminalsOfComplementaryTransconductance(Core::Circuit & nonInvertingStage, Core::Instance & transconductance) const;
 			void connectInstanceTerminalsOfLoad(Core::Circuit & nonInvertingStage, Core::Instance & load) const;
@@ -202,6 +215,7 @@ namespace Synthesis
 
 		private:
 			static const Core::InstanceName TRANSCONDUCTANCE_;
+			static const Core::InstanceName TRANSIMPEDANCE_;
 			static const Core::InstanceName STAGEBIAS_;
 			static const Core::InstanceName STAGEBIASNMOS_;
 			static const Core::InstanceName STAGEBIASPMOS_;
@@ -212,6 +226,10 @@ namespace Synthesis
 			static const Core::NetId IN2_NET_;
 			static const Core::NetId OUT1_NET_;
 			static const Core::NetId OUT2_NET_;
+
+			static const Core::NetId IN_NET_;
+			static const Core::NetId OUT_NET_;
+			static const Core::NetId INTRANSIMPEDANCE_NET_;
 
 			static const Core::NetId SOURCETRANSCONDUCTANCE_NET_;
 			static const Core::NetId SOURCETRANSCONDUCTANCE1_NET_;

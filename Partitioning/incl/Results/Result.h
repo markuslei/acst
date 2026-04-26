@@ -45,6 +45,7 @@
 
 #include "Partitioning/incl/Parts/Part.h"
 #include "Partitioning/incl/Parts/TransconductancePart.h"
+#include "Partitioning/incl/Parts/TransimpedancePart.h"
 #include "Partitioning/incl/Parts/BiasPart.h"
 #include "Partitioning/incl/Parts/LoadPart.h"
 #include "Partitioning/incl/Parts/CapacitancePart.h"
@@ -69,6 +70,7 @@ public:
 	~Result();
 
 	void addTransconductancePart(TransconductancePart & part);
+	void addTransimpedancePart(TransimpedancePart & part);
 	void addLoadPart(LoadPart& part);
 	void addBiasPart(BiasPart & part);
 	void addCapacitancePart(CapacitancePart & part);
@@ -109,6 +111,8 @@ public:
 	const Part & getPart(const Core::Device & device ) const;
 	TransconductancePart & getTransconductancePart(const StructRec::Structure & structure);
 	const TransconductancePart & getTransconductancePart(const StructRec::Structure & structure) const;
+	TransimpedancePart & getTransimpedancePart(const StructRec::Structure & structure);
+	const TransimpedancePart & getTransimpedancePart(const StructRec::Structure & structure) const;
 	BiasPart & getBiasPart(const StructRec::Structure & structure);
 	const BiasPart & getBiasPart(const StructRec::Structure & structure) const;
 	LoadPart & getLoadPart(const StructRec::Structure & structure);
@@ -134,6 +138,7 @@ public:
 	bool hasBiasOfFoldedPair() const;
 
 	std::vector<TransconductancePart *> getAllTransconductanceParts() const;
+	std::vector<TransimpedancePart*> getAllTransimpedanceParts() const;
 	std::vector<LoadPart*> getAllLoadParts() const;
 	std::vector<BiasPart*> getAllBiasParts() const;
 	std::vector<CapacitancePart*> getAllCapacitanceParts() const;
@@ -157,6 +162,7 @@ public:
 	std::vector<Core::NetId> findBiasNets() const;
 
 	bool hasTransconductanceParts() const;
+	bool hasTransimpedanceParts() const;
 	bool hasLoadParts() const;
 	bool hasBiasParts() const;
 	bool hasCapacitanceParts() const;
@@ -175,6 +181,7 @@ private:
 	bool hasCapacity(Core::DeviceId deviceId) const;
 
 	void eraseTransconductanceParts();
+	void eraseTransimpedanceParts();
 	void eraseLoadParts();
 	void eraseBiasParts();
 	void eraseCommonModeSignalDetectorParts();
@@ -187,6 +194,7 @@ private:
 
 private:
 	std::map<PartId, TransconductancePart*> transconductanceParts_;
+	std::map<PartId, TransimpedancePart*> transimpedanceParts_;
 	std::map<PartId, BiasPart*> biasParts_;
 	std::map<PartId, LoadPart*> loadParts_;
 	std::map<PartId, CapacitancePart*> capacitanceParts_;

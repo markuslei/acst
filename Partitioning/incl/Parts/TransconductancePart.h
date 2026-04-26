@@ -53,6 +53,7 @@ namespace Partitioning {
 
 	class Component;
 	class Result;
+	class TransimpedancePart;
 
 	class TransconductancePart : public Part
 	{
@@ -65,12 +66,15 @@ namespace Partitioning {
 		void setHelperStructure(const StructRec::Structure & helperStructure);
 		void addBiasPart(BiasPart & biasPart);
 		void addLoadPart(LoadPart & loadPart);
+		void addTransimpedancePart(TransimpedancePart & transimpedancePart);
 
 		bool isInitialized() const;
 
 		const StructRec::Structure & getHelperStructure() const;
 		std::vector<BiasPart*> & getBiasPart();
 		std::vector<LoadPart*> & getLoadPart();
+		std::vector<TransimpedancePart*> & getTransimpedanceParts();
+		const std::vector<TransimpedancePart*> & getTransimpedanceParts() const;
 		std::string getType() const;
 		std::string getFirstStageType() const;
 
@@ -92,6 +96,7 @@ namespace Partitioning {
         bool hasHelperStructure() const;
         bool hasLoadPart() const;
         bool hasBiasPart(PartId partId) const;
+        bool hasTransimpedancePart() const;
 
         bool hasFirstStageType() const;
 
@@ -103,6 +108,7 @@ namespace Partitioning {
 		bool isResistorPart() const;
 		bool isCommonModeSignalDetectorPart() const;
 		bool isPositiveFeedbackPart() const;
+		bool isTransimpedancePart() const;
 
 		Component & findComponentNotConnectedToVref(
 				const AutomaticSizing::CircuitParameter & circuitParameter, const Result & partitioningResult) const;
@@ -169,6 +175,7 @@ namespace Partitioning {
 	  const StructRec::Structure * helperStructure_;
 	  std::vector<BiasPart*> biasParts_;
 	  std::vector<LoadPart*> loadParts_;
+	  std::vector<TransimpedancePart*> transimpedanceParts_;
 	  TypeEnum typeEnum_;
 	  FirstStageTypeEnum firstStageTypeEnum_;
 	};

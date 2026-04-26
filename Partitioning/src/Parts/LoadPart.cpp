@@ -279,6 +279,11 @@ namespace Partitioning {
 		return false;
 	}
 
+	bool LoadPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 
 	bool  LoadPart::hasCrossCoupledPair(const Partitioning::Result & result) const
 	{

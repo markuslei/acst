@@ -219,6 +219,11 @@ namespace Partitioning {
 		return false;
 	}
 
+	bool BiasPart::isTransimpedancePart() const
+	{
+		return false;
+	}
+
 }
 
 
