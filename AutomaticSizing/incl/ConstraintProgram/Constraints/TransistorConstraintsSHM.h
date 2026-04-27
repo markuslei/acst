@@ -77,6 +77,7 @@ namespace AutomaticSizing
 		void setCircuitInformation(const CircuitInformation & information);
 		void setPartitioningResult(const Partitioning::Result & result);
 		void setTransistorToWidthMap(ComponentToIntVarMap & widthMap );
+		void setTransistorToMultiplierMap(ComponentToIntVarMap & multiplierMap );
 		void setTransistorToLengthMap(ComponentToIntVarMap & lenghtMap);
 		void setTransistorToCurrentMap(ComponentToIntVarMap & currentMap);
 		void setNetToVoltageMap(NetToIntVarMap & voltageMap);
@@ -89,6 +90,7 @@ namespace AutomaticSizing
 		const CircuitInformation & getCircuitInformation() const;
 		const Partitioning::Result & getPartitioningResult() const;
 		ComponentToIntVarMap & getTransistorToWidthMap();
+		ComponentToIntVarMap & getTransistorToMultiplierMap();
 		ComponentToIntVarMap & getTransistorToLengthMap();
 		ComponentToIntVarMap & getTransistorToCurrentMap();
 		NetToIntVarMap & getNetToVoltageMap();
@@ -125,6 +127,7 @@ namespace AutomaticSizing
 		const CircuitInformation * circuitInformation_;
 		const Partitioning::Result * partitioningResult_;
 		ComponentToIntVarMap * transistorToWidthMap_;
+		ComponentToIntVarMap * transistorToMultiplierMap_;
 		ComponentToIntVarMap* transistorToLengthMap_;
 		ComponentToIntVarMap * transistorToCurrentMap_;
 		NetToIntVarMap * netToVoltageMap_;

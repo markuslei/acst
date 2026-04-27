@@ -61,6 +61,7 @@ namespace AutomaticSizing {
 		void setStructureRecognitionResult(const StructRec::StructureCircuits & structRecResult);
 		void setCircuitInformation(CircuitInformation & circuitInformation);
 		void setTransistorModel(std::string model);
+		void setEKVVersion(int version);
 		void setDefinition(std::string definition);
 		void setRuntime(int runtime);
 
@@ -83,6 +84,7 @@ namespace AutomaticSizing {
 		CircuitInformation & getCircuitInformation();
 
 		std::string getTransistorModel() const;
+		int getEKVVersion() const;
 		std::string getDefinition() const;
 
 		int getRuntime() const;
@@ -93,6 +95,7 @@ namespace AutomaticSizing {
 		const StructRec::StructureCircuits* structRecResult_;
 		SimpleSearchSpace  searchSpace_;
 		std::string transistorModel_;
+		int ekvVersion_;
 		std::string definition_;
 		int runtime_;
 

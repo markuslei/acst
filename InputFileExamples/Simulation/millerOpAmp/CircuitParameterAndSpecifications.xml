@@ -1,0 +1,47 @@
+<CircuitParameter>
+	<LoadCapacities>
+		<LoadCapacity>
+			<Value>1</Value><!--- [pF] -->
+			<DeviceName>cl</DeviceName>
+		</LoadCapacity>
+	</LoadCapacities>
+	<SupplyVoltagePin>
+		<SupplyVoltage Vdd="1.2">	</SupplyVoltage><!--- [V] --> 
+		<NetName>vdd!</NetName>
+	</SupplyVoltagePin>
+	<GroundPin>
+		<GroundVoltage Gnd="0"></GroundVoltage><!--- [V] -->
+		<NetName>gnd!</NetName>
+	</GroundPin>
+	<CurrentBiasPin>
+		<BiasCurrent Ibias="10"></BiasCurrent><!--- [uA] -->
+		<NetName>ibias</NetName>
+	</CurrentBiasPin>
+	<InputPinMinus>
+		<InputVoltage Vin="0.8"></InputVoltage><!--- [V] -->
+		<NetName>inn</NetName>
+	</InputPinMinus>
+	<InputPinPlus>
+		<InputVoltage Vin= "0.8"></InputVoltage>
+		<NetName>inp</NetName>
+	</InputPinPlus>
+	<OutputPin>
+		<NetName>out</NetName>
+	</OutputPin>
+</CircuitParameter>
+<Specifications>
+	<minimumGain A="60"></minimumGain>
+	<minimumTransientFrequency ft="10"></minimumTransientFrequency><!--- [MHz] -->
+	<maximumSlewRate SR="5"></maximumSlewRate><!--- [V/(uS)] -->
+	<minimumCMRR CMRR="70"></minimumCMRR><!--- [dB] -->
+	<minimumPosPSRR posPSRR="40"></minimumPosPSRR><!--- [dB] -->
+	<minimumNegPSRR negPSRR="60"></minimumNegPSRR><!--- [dB] -->
+	<OutputVoltageSwing Voutmax="1" Voutmin="0.2"></OutputVoltageSwing><!--- [V] -->
+	<CommonModeInputVoltage Vcmmax="0.0" Vcmmin="-0.0"  ></CommonModeInputVoltage><!--- [V] -->
+	<GateOverDriveVoltage Vover="0.1"></GateOverDriveVoltage><!--- [V] -->
+	<maximumPowerConsumption P ="1"></maximumPowerConsumption><!--- [mW] -->
+	<maximumArea Area = "300"></maximumArea><!--- [mum^2]-->
+	<phaseMargin PM = "60"></phaseMargin><!-- [°] -->
+</Specifications>
+
+	

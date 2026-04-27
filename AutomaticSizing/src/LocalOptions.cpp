@@ -55,7 +55,7 @@ namespace AutomaticSizing {
 	const std::string LocalOptions::XML_TECHNOLOGIE_FILE_DESCRIPTION_ = "path to the technologie file of the used components";
 	const std::string LocalOptions::XML_CIRCUIT_INFORMATION_FILE_OPTION_ = "xml-circuit-information-file";
 	const std::string LocalOptions::XML_CIRCUIT_INFORMATION_FILE_DESCRIPTION_ = "path to the circuit information file with the circuit parameters and specifications";
-	const std::string LocalOptions::TRANSISTOR_MODEL_DESCRIPTION_ = "declares which transistor model is used. Possible parameters: SHM = Shichman-Hodge-Model, EKV";
+	const std::string LocalOptions::TRANSISTOR_MODEL_DESCRIPTION_ = "declares which transistor model is used. Possible parameters: SHM = Shichman-Hodge-Model, EKV1, EKV2, EKV3 (EKV is a legacy alias for EKV1)";
 	const std::string LocalOptions::TRANSISTOR_MODEL_OPTION_ = "transistor-model";
 	const std::string LocalOptions::SCALING_OPTION_ = "scaling";
     const std::string LocalOptions::SCALING_DESCRIPTION_ = "specifies the resolution of the transistor sizes. Possible parameters: 0.1mum, 1mum ";
@@ -81,8 +81,25 @@ namespace AutomaticSizing {
     std::string LocalOptions::getTransistorModel() const
     {
     	std::string transistorModel = findStringOptionValue(TRANSISTOR_MODEL_OPTION_);
-    	assert(transistorModel == "EKV" || transistorModel == "SHM", "Transistor model not supported.");
+    	assert(transistorModel == "SHM"
+    			|| transistorModel == "EKV"
+    			|| transistorModel == "EKV1"
+    			|| transistorModel == "EKV2"
+    			|| transistorModel == "EKV3",
+    			"Transistor model not supported.");
+    	if(transistorModel == "EKV1" || transistorModel == "EKV2" || transistorModel == "EKV3")
+    	{
+    		return "EKV";
+    	}
     	return transistorModel;
+    }
+
+    int LocalOptions::getEKVVersion() const
+    {
+    	std::string transistorModel = findStringOptionValue(TRANSISTOR_MODEL_OPTION_);
+    	if(transistorModel == "EKV2") return 2;
+    	if(transistorModel == "EKV3") return 3;
+    	return 1;
     }
 
     std::string LocalOptions::getScaling() const

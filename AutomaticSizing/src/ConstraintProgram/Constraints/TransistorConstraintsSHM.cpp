@@ -62,6 +62,7 @@ namespace AutomaticSizing {
 			graph_(NULL),
 			partitioningResult_(NULL),
 			transistorToWidthMap_(NULL),
+			transistorToMultiplierMap_(NULL),
 			transistorToLengthMap_(NULL),
 			transistorToCurrentMap_(NULL),
 			netToVoltageMap_(NULL),
@@ -80,6 +81,12 @@ namespace AutomaticSizing {
 		ComponentToIntVarMap& widthMap)
 	{
 		transistorToWidthMap_ = & widthMap;
+	}
+
+	void TransistorConstraintsSHM::setTransistorToMultiplierMap(
+		ComponentToIntVarMap& multiplierMap)
+	{
+		transistorToMultiplierMap_ = & multiplierMap;
 	}
 
 	void TransistorConstraintsSHM::setTransistorToLengthMap(
@@ -146,6 +153,12 @@ namespace AutomaticSizing {
 		return *transistorToWidthMap_;
 	}
 
+	ComponentToIntVarMap& TransistorConstraintsSHM::getTransistorToMultiplierMap()
+	{
+		assert(transistorToMultiplierMap_ != NULL);
+		return * transistorToMultiplierMap_;
+	}
+
 	ComponentToIntVarMap& TransistorConstraintsSHM::getTransistorToLengthMap()
 	{
 		assert(transistorToLengthMap_ != NULL);
@@ -204,12 +217,15 @@ namespace AutomaticSizing {
 		Gecode::FloatVar ids = Gecode::expr(getSpace(), idsHelperVar * pow(10,-9));
 
 		Gecode::FloatVar widthHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
 
 		Gecode::channel(getSpace(), getTransistorToWidthMap().find(component), widthHelperVar);
+		Gecode::channel(getSpace(), getTransistorToMultiplierMap().find(component), multiplierHelperVar);
 		channel(getSpace(), getTransistorToLengthMap().find(component), lengthHelperVar);
 
 		Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelperVar*u);
+		Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelperVar);
 		Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelperVar*u);
 
 
@@ -225,13 +241,13 @@ namespace AutomaticSizing {
 
 			if(component.getPart().isLoadPart() && getPartitioningResult().getLoadPart(component.getArray()).hasCrossCoupledPair(getPartitioningResult()))
 			{
-				Gecode::rel(getSpace(), muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   <= 1.1);
-				Gecode::rel(getSpace(), muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   >= 0.9);
+				Gecode::rel(getSpace(), muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   <= 1.1);
+				Gecode::rel(getSpace(), muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   >= 0.9);
 			}
 			else
 			{
-				Gecode::rel(getSpace(), muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   <= 1.01);
-				Gecode::rel(getSpace(), muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   >= 0.99);
+				Gecode::rel(getSpace(), muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   <= 1.01);
+				Gecode::rel(getSpace(), muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /* (1+lamda * vds)*/ / ids   >= 0.99);
 			}
 
 			if(getPartitioningResult().getFirstStage().hasHelperStructure() && !getPartitioningResult().hasBiasOfFoldedPair())
@@ -300,13 +316,13 @@ namespace AutomaticSizing {
 			if(component.getPart().isLoadPart() && getPartitioningResult().getLoadPart(component.getArray()).hasCrossCoupledPair(getPartitioningResult()))
 			{
 
-				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  <=1.1);
-				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  >= 0.9);
+				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  <=1.1);
+				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  >= 0.9);
 			}
 			else
 			{
-				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  <=1.01);
-				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  >= 0.99);
+				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  <=1.01);
+				Gecode::rel(getSpace(),  -1* muCox* 0.5 *(width*multiplier/length) * pow(vgs - vth,2)  /** (1-lamda * vds) *//ids  >= 0.99);
 			}
 
 
@@ -420,15 +436,18 @@ namespace AutomaticSizing {
 
 		//IdsSpec
 		Gecode::FloatVar widthHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
 
 		channel(getSpace(), getTransistorToWidthMap().find(component), widthHelperVar);
+		channel(getSpace(), getTransistorToMultiplierMap().find(component), multiplierHelperVar);
 		channel(getSpace(), getTransistorToLengthMap().find(component), lengthHelperVar);
 
 		Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelperVar*u);
+		Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelperVar);
 		Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelperVar*u);
 //
-		Gecode::FloatVar idsSpec = expr(getSpace(), muCox/(2*n)* width/length * pow(2*n*Vt, 2));
+		Gecode::FloatVar idsSpec = expr(getSpace(), muCox/(2*n)* width*multiplier/length * pow(2*n*Vt, 2));
 		dom(getSpace(),idsSpec, 0, 100);
 
 
@@ -634,12 +653,15 @@ namespace AutomaticSizing {
 		Gecode::FloatVar ids = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(component));
 
 		Gecode::FloatVar widthHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
 
 		channel(getSpace(), getTransistorToWidthMap().find(component), widthHelperVar);
+		channel(getSpace(), getTransistorToMultiplierMap().find(component), multiplierHelperVar);
 		channel(getSpace(), getTransistorToLengthMap().find(component), lengthHelperVar);
 
 		Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelperVar*u);
+		Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelperVar);
 		Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelperVar*u);
 
 
@@ -648,7 +670,7 @@ namespace AutomaticSizing {
 			techSpec = getCircuitInformation().getTechnologieSpecificationSHMNmos();
 			Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
 			Gecode::FloatVal vth = techSpec.getThresholdVoltage();
-			Gecode::rel(getSpace(), muCox *(width/length) * ((vgs - vth)-0.5*vds) * vds  == 1 * ids);
+			Gecode::rel(getSpace(), muCox *(width*multiplier/length) * ((vgs - vth)-0.5*vds) * vds  == 1 * ids);
 			Gecode::rel(getSpace(), vgs - vth > vds);
 			Gecode::rel(getSpace(), vds > 0);
 			Gecode::rel(getSpace(), vgs - vth > 0);
@@ -658,7 +680,7 @@ namespace AutomaticSizing {
 			techSpec = getCircuitInformation().getTechnologieSpecificationSHMPmos();
 			Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
 			Gecode::FloatVal vth = techSpec.getThresholdVoltage();
-			Gecode::rel(getSpace(), -1* muCox * (width/length) * ((vgs - vth) - vds * 0.5) * vds  / ids == 1);
+			Gecode::rel(getSpace(), -1* muCox * (width*multiplier/length) * ((vgs - vth) - vds * 0.5) * vds  / ids == 1);
 			Gecode::rel(getSpace(), vgs - vth <  vds);
 			Gecode::rel(getSpace(), vds < 0);
 			Gecode::rel(getSpace(), vgs - vth < 0);
@@ -716,12 +738,15 @@ namespace AutomaticSizing {
 			Gecode::FloatVar ids = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(component));
 
 			Gecode::FloatVar widthHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
+			Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
 			Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
 
 			channel(getSpace(), getTransistorToWidthMap().find(component), widthHelperVar);
+			channel(getSpace(), getTransistorToMultiplierMap().find(component), multiplierHelperVar);
 			channel(getSpace(), getTransistorToLengthMap().find(component), lengthHelperVar);
 
 			Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelperVar* u);
+			Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelperVar);
 			Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelperVar*u);
 
 			TechnologieSpecificationSHM  techSpec;
@@ -737,7 +762,7 @@ namespace AutomaticSizing {
 
 			float muCox = techSpec.getMobilityOxideCapacityCoefficient();
 
-			Gecode::FloatVar widthLengthRatio = Gecode::expr(getSpace(), length * 2 /( muCox * width));
+			Gecode::FloatVar widthLengthRatio = Gecode::expr(getSpace(), length * 2 /( muCox * width*multiplier));
 			Gecode::rel(getSpace(), abs(ids)* widthLengthRatio >= pow(vOverDrive, 2));
 	}
 
@@ -752,18 +777,22 @@ namespace AutomaticSizing {
 		Gecode::FloatVal p = 0.000000000001;
 
 		Gecode::FloatVar widthHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
 
 		channel(getSpace(), getTransistorToWidthMap().find(component), widthHelperVar);
+		channel(getSpace(), getTransistorToMultiplierMap().find(component), multiplierHelperVar);
 		channel(getSpace(), getTransistorToLengthMap().find(component), lengthHelperVar);
 
 		Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelperVar * u);
+		Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelperVar);
 		Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelperVar * u);
 
 
-		Gecode::rel(getSpace(), width *  length >= 0.99* p * getCircuitInformation().getTechnologieSpecificationSHM(component).getMinArea());
+		Gecode::rel(getSpace(), width*multiplier *  length >= 0.99* p * getCircuitInformation().getTechnologieSpecificationSHM(component).getMinArea());
 		Gecode::rel(getSpace(), length  >= 0.000001* getCircuitInformation().getTechnologieSpecificationSHM(component).getMinLength()-0.00000001);
 		Gecode::rel(getSpace(), width > pow(10,-6)* getCircuitInformation().getTechnologieSpecificationSHM(component).getMinWidth()-0.00000001);
+		Gecode::rel(getSpace(), multiplier > getCircuitInformation().getTechnologieSpecificationSHM(component).getMinMultiplier()-1);
 
 	}
 

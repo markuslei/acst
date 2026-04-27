@@ -71,6 +71,7 @@ namespace AutomaticSizing {
 		void setStructureRecognitionResult(const StructRec::StructureCircuits & structRecResult);
 		void setCircuitInformation(const CircuitInformation & information);
 		void setTransistorToWidthMap(ComponentToIntVarMap & widthMap);
+		void setTransistorToMultiplierMap(ComponentToIntVarMap & multiplierMap);
 		void setTransistorToLengthMap(ComponentToIntVarMap & lengthMap);
 		void setTransistorToCurrentMap(ComponentToIntVarMap & currentMap);
 		void setTwoPortToValueMap(ComponentToIntVarMap & twoPortMap);
@@ -82,6 +83,7 @@ namespace AutomaticSizing {
 		bool isInitialized() const;
 
 		EqualDimensionMap getEqualWidthMap() const;
+		EqualDimensionMap getEqualMultiplierMap() const;
 		EqualDimensionMap getEqualLengthMap() const;
 
 	private:
@@ -89,6 +91,7 @@ namespace AutomaticSizing {
 		const StructRec::StructureCircuits & getStructureRecognitionResult() const;
 		const CircuitInformation & getCircuitInformation() const;
 		ComponentToIntVarMap & getTransistorToWidthMap();
+		ComponentToIntVarMap & getTransistorToMultiplierMap();
 		ComponentToIntVarMap & getTransistorToLengthMap();
 		ComponentToIntVarMap & getTransistorToCurrentMap();
 		ComponentToIntVarMap & getTwoPortToValueMap();
@@ -140,6 +143,7 @@ namespace AutomaticSizing {
 		const 	Partitioning::Result * partitioningResult_;
 		const StructRec::StructureCircuits * structRecResult_;
 		ComponentToIntVarMap * transistorToWidthMap_;
+		ComponentToIntVarMap * transistorToMultiplierMap_;
 		ComponentToIntVarMap* transistorToLengthMap_;
 		ComponentToIntVarMap * transistorToCurrentMap_;
 		ComponentToIntVarMap * twoPortToValueMap_;
@@ -148,6 +152,7 @@ namespace AutomaticSizing {
 
 		EqualDimensionMap equalLengthMap_;
 		EqualDimensionMap equalWidthMap_;
+		EqualDimensionMap equalMultiplierMap_;
 
 		bool isInitialized_;
 

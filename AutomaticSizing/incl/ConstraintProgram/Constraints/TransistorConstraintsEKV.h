@@ -36,11 +36,21 @@
  *
  *************************************************************************************************/
 
+
+
+
 #ifndef AUTOMATICSIZING_INCL_CONSTRAINTPROGRAM_CONSTRAINTS_TRANSISTORCONSTRAINTSEKV_H_
 #define AUTOMATICSIZING_INCL_CONSTRAINTPROGRAM_CONSTRAINTS_TRANSISTORCONSTRAINTSEKV_H_
 
+#include "Core/incl/Circuit/Net/NetId/NetId.h"
 
 #include <gecode/float.hh>
+
+namespace StructRec {
+
+	class Structure;
+
+}
 
 namespace Partitioning {
 
@@ -67,10 +77,12 @@ namespace AutomaticSizing
 		void setCircuitInformation(const CircuitInformation & information);
 		void setPartitioningResult(const Partitioning::Result & result);
 		void setTransistorToWidthMap(ComponentToIntVarMap & widthMap );
+		void setTransistorToMultiplierMap(ComponentToIntVarMap & multiplierMap );
 		void setTransistorToLengthMap(ComponentToIntVarMap & lenghtMap);
 		void setTransistorToCurrentMap(ComponentToIntVarMap & currentMap);
 		void setNetToVoltageMap(NetToIntVarMap & voltageMap);
 		void setSpace(SearchSpace & space);
+		void setEKVVersion(int version);
 
 		void createConstraints();
 
@@ -79,19 +91,24 @@ namespace AutomaticSizing
 		const CircuitInformation & getCircuitInformation() const;
 		const Partitioning::Result & getPartitioningResult() const;
 		ComponentToIntVarMap & getTransistorToWidthMap();
+		ComponentToIntVarMap & getTransistorToMultiplierMap();
 		ComponentToIntVarMap & getTransistorToLengthMap();
 		ComponentToIntVarMap & getTransistorToCurrentMap();
 		NetToIntVarMap & getNetToVoltageMap();
 		SearchSpace & getSpace();
+		int getEKVVersion() const;
 
 		void createSaturationConstraints(Partitioning::Component & component);
 		void createLinearConstraints(Partitioning::Component & component);
+		void createOffConstraint(Partitioning::Component & component);
+		void createCompensationResistorConstraint(Partitioning::Component & component);
 
 		void createSameRegionConstraintFoldedPair();
 		void createSameRegionConstraint(Partitioning::Component& transistor1, Partitioning::Component & transistor2);
 
 		void createLinearVoltageConstraints(Partitioning::Component & component);
-		void createSaturationVoltageConstraints(Partitioning::Component & component);
+		void createSaturationCurrentConstraintsStrongInversion(Partitioning::Component & component);
+		void createSaturationCurrentConstraintsWeakInversion(Partitioning::Component & component);
 		void createDependencyConstraints(Partitioning::Component & component);
 
 		void createMinimalAreaConstraint(Partitioning::Component & component);
@@ -101,6 +118,10 @@ namespace AutomaticSizing
 
 		bool isLowerTransistorOf4TransistorCurrentMirror(Partitioning::Component & component);
 
+		bool isOutputNet(Core::NetId net) const;
+		bool isCurrentBias(const StructRec::Structure & structure) const;
+		bool isCurrentMirror(const StructRec::Structure & structure) const;
+
 		Gecode::FloatVar computeEdgeVoltage(const Edge & edge);
 
 	private:
@@ -108,10 +129,12 @@ namespace AutomaticSizing
 		const CircuitInformation * circuitInformation_;
 		const Partitioning::Result * partitioningResult_;
 		ComponentToIntVarMap * transistorToWidthMap_;
+		ComponentToIntVarMap* transistorToMultiplierMap_;
 		ComponentToIntVarMap* transistorToLengthMap_;
 		ComponentToIntVarMap * transistorToCurrentMap_;
 		NetToIntVarMap * netToVoltageMap_;
 		SearchSpace * space_;
+		int ekvVersion_;
 
 };
 

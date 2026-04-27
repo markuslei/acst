@@ -74,6 +74,7 @@ namespace AutomaticSizing {
         Gecode::IntVar find(const StructRec::StructureId& structureId) const;
 
         void writeWidthToTransistor(Result & result);
+        void writeMultiplierToTransistor(Result & result);
         void writeLengthToTransistor(Result & result);
         void writeValueToCapacitance(Result & result);
         void writeCurrent(Result & result);
@@ -81,6 +82,7 @@ namespace AutomaticSizing {
 
         //Debug function for Gecode
         void setWidth(Gecode::Space & space);
+        void setMultiplier(Gecode::Space & space);
         void setLength(Gecode::Space & space);
         void setCapacitance(Gecode::Space & space);
 

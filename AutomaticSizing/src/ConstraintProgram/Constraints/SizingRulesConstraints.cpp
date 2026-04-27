@@ -55,6 +55,7 @@ namespace AutomaticSizing {
 				partitioningResult_(NULL),
 				structRecResult_(NULL),
 				transistorToWidthMap_(NULL),
+				transistorToMultiplierMap_(NULL),
 				transistorToLengthMap_(NULL),
 				transistorToCurrentMap_(NULL),
 				circuitInformation_(NULL),
@@ -93,6 +94,12 @@ namespace AutomaticSizing {
 		transistorToWidthMap_ = & widthMap;
 	}
 
+	void SizingRulesConstraints::setTransistorToMultiplierMap(
+		ComponentToIntVarMap& multiplierMap)
+	{
+		transistorToMultiplierMap_ = & multiplierMap;
+	}
+
 	void SizingRulesConstraints::setTransistorToLengthMap(
 		ComponentToIntVarMap& lengthMap)
 	{
@@ -114,6 +121,11 @@ namespace AutomaticSizing {
 	EqualDimensionMap SizingRulesConstraints::getEqualWidthMap() const
 	{
 		return equalWidthMap_;
+	}
+
+	EqualDimensionMap SizingRulesConstraints::getEqualMultiplierMap() const
+	{
+		return equalMultiplierMap_;
 	}
 
 	EqualDimensionMap SizingRulesConstraints::getEqualLengthMap() const
@@ -252,6 +264,12 @@ namespace AutomaticSizing {
 		return * transistorToWidthMap_;
 	}
 
+	ComponentToIntVarMap& SizingRulesConstraints::getTransistorToMultiplierMap()
+	{
+		assert(transistorToMultiplierMap_ != NULL);
+		return * transistorToMultiplierMap_;
+	}
+
 	ComponentToIntVarMap& SizingRulesConstraints::getTransistorToLengthMap()
 	{
 		assert(transistorToLengthMap_ != NULL);
@@ -281,19 +299,27 @@ namespace AutomaticSizing {
 	{
 		const StructRec::Pair & currentMirror = static_cast<const StructRec::Pair &>(structure);
 		Gecode::IntVar widthChild1 = getTransistorToWidthMap().find(currentMirror.getChild1().getIdentifier());
+		Gecode::IntVar multiplierChild1 = getTransistorToMultiplierMap().find(currentMirror.getChild1().getIdentifier());
 		Gecode::IntVar currentChild1 = getTransistorToCurrentMap().find(currentMirror.getChild1().getIdentifier());
 		Gecode::IntVar widthChild2 = getTransistorToWidthMap().find(currentMirror.getChild2().getIdentifier());
+		Gecode::IntVar multiplierChild2 = getTransistorToMultiplierMap().find(currentMirror.getChild2().getIdentifier());
 		Gecode::IntVar currentChild2 = getTransistorToCurrentMap().find(currentMirror.getChild2().getIdentifier());
 
 
 		Gecode::FloatVar widthChild1HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthChild1 , widthChild1HelperVar);
 
+		Gecode::FloatVar multiplierChild1HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierChild1 , multiplierChild1HelperVar);
+
 		Gecode::FloatVar currentChild1HelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentChild1, currentChild1HelperVar);
 
 		Gecode::FloatVar widthChild2HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthChild2 , widthChild2HelperVar);
+
+		Gecode::FloatVar multiplierChild2HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierChild2 , multiplierChild2HelperVar);
 
 		Gecode::FloatVar currentChild2HelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentChild2, currentChild2HelperVar);
@@ -318,6 +344,7 @@ namespace AutomaticSizing {
 
 		equalLengthMap_.add(firstChild,getPartitioningResult().findComponent(secondChild));
 		equalWidthMap_.add(firstChild,getPartitioningResult().findComponent(secondChild));
+		equalMultiplierMap_.add(firstChild,getPartitioningResult().findComponent(secondChild));
 	}
 
 	void SizingRulesConstraints::createCascodeCurrentMirrorConstraints(
@@ -330,6 +357,10 @@ namespace AutomaticSizing {
 		Gecode::IntVar widthUpperDTA = getTransistorToWidthMap().find(diodeStack.getChild1().getIdentifier());
 		Gecode::IntVar widthLowerNTA = getTransistorToWidthMap().find(cascodePair.getChild2().getIdentifier());
 		Gecode::IntVar widthUpperNTA = getTransistorToWidthMap().find(cascodePair.getChild1().getIdentifier());
+		Gecode::IntVar multiplierLowerDTA = getTransistorToMultiplierMap().find(diodeStack.getChild2().getIdentifier());
+		Gecode::IntVar multiplierUpperDTA = getTransistorToMultiplierMap().find(diodeStack.getChild1().getIdentifier());
+		Gecode::IntVar multiplierLowerNTA = getTransistorToMultiplierMap().find(cascodePair.getChild2().getIdentifier());
+		Gecode::IntVar multiplierUpperNTA = getTransistorToMultiplierMap().find(cascodePair.getChild1().getIdentifier());
 
 		Gecode::FloatVar widthLowerDTAHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthLowerDTA , widthLowerDTAHelperVar);
@@ -343,8 +374,22 @@ namespace AutomaticSizing {
 		Gecode::FloatVar widthUpperNTAHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthUpperNTA , widthUpperNTAHelperVar);
 
-		Gecode::rel(getSpace(), (widthLowerNTA* widthUpperDTA )/(widthLowerDTA*widthUpperNTA) >= 0.95);
-		Gecode::rel(getSpace(), (widthLowerNTA* widthUpperDTA)/(widthLowerDTA *widthUpperNTA ) <= 1.05  );
+		Gecode::FloatVar multiplierLowerDTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLowerDTA , multiplierLowerDTAHelperVar);
+
+		Gecode::FloatVar multiplierUpperDTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierUpperDTA , multiplierUpperDTAHelperVar);	
+
+		Gecode::FloatVar multiplierLowerNTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLowerNTA , multiplierLowerNTAHelperVar);
+
+		Gecode::FloatVar multiplierUpperNTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierUpperNTA , multiplierUpperNTAHelperVar);
+
+
+
+		Gecode::rel(getSpace(), (widthLowerNTA * multiplierLowerNTA * widthUpperDTA * multiplierUpperDTA )/(widthLowerDTA * multiplierLowerDTA * widthUpperNTA * multiplierUpperNTA) >= 0.95);
+		Gecode::rel(getSpace(), (widthLowerNTA * multiplierLowerNTA * widthUpperDTA * multiplierUpperDTA )/(widthLowerDTA * multiplierLowerDTA * widthUpperNTA * multiplierUpperNTA) <= 1.05  );
 	}
 
 	void SizingRulesConstraints::addCascodeCurrentMirrorConstraintsToMap(
@@ -370,19 +415,27 @@ namespace AutomaticSizing {
 		const StructRec::Pair & vref1 = static_cast<const StructRec::Pair &>(fourTransistorCurrentMirror.getChild1());
 		const StructRec::Pair & currentMirrorLoad = static_cast<const StructRec::Pair &>(fourTransistorCurrentMirror.getChild2());
 		Gecode::IntVar widthUpperVref1 = getTransistorToWidthMap().find(vref1.getChild1().getIdentifier());
+		Gecode::IntVar multiplierUpperVref1 = getTransistorToMultiplierMap().find(vref1.getChild1().getIdentifier());	
 		Gecode::IntVar currentUpperVref1 = getTransistorToCurrentMap().find(vref1.getChild1().getIdentifier());
 		Gecode::IntVar widthUpperCML = getTransistorToWidthMap().find(currentMirrorLoad.getChild1().getIdentifier());
+		Gecode::IntVar multiplierUpperCML = getTransistorToMultiplierMap().find(currentMirrorLoad.getChild1().getIdentifier());
 		Gecode::IntVar currentUpperCML = getTransistorToCurrentMap().find(currentMirrorLoad.getChild1().getIdentifier());
 
 
 		Gecode::FloatVar widthUpperVref1HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthUpperVref1 , widthUpperVref1HelperVar);
 
+		Gecode::FloatVar multiplierUpperVref1HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierUpperVref1 , multiplierUpperVref1HelperVar);
+
 		Gecode::FloatVar currentUpperVref1HelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentUpperVref1 , currentUpperVref1HelperVar);
 
 		Gecode::FloatVar widthUpperCMLHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthUpperCML , widthUpperCMLHelperVar);
+
+		Gecode::FloatVar multiplierUpperCMLHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierUpperCML , multiplierUpperCMLHelperVar);
 
 		Gecode::FloatVar currentUpperCMLHelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentUpperCML , currentUpperCMLHelperVar);
@@ -403,6 +456,9 @@ namespace AutomaticSizing {
 		equalWidthMap_.add(upperVref1,getPartitioningResult().findComponent(lowerVref1));
 		equalWidthMap_.add(upperCML,getPartitioningResult().findComponent(lowerCML));
 
+		equalMultiplierMap_.add(upperVref1,getPartitioningResult().findComponent(lowerVref1));
+		equalMultiplierMap_.add(upperCML,getPartitioningResult().findComponent(lowerCML));
+
 		equalLengthMap_.add(upperVref1, getPartitioningResult().findComponent(lowerVref1));
 		equalLengthMap_.add(upperVref1, getPartitioningResult().findComponent(lowerCML));
 		equalLengthMap_.add(upperVref1, getPartitioningResult().findComponent(upperCML));
@@ -416,18 +472,26 @@ namespace AutomaticSizing {
 		const StructRec::Pair & mixedPair1 = static_cast<const StructRec::Pair &>(improvedWilsonCurrentMirror.getChild1());
 		const StructRec::Pair & mixedPair2 = static_cast<const StructRec::Pair &>(improvedWilsonCurrentMirror.getChild2());
 		Gecode::IntVar widthLower1 = getTransistorToWidthMap().find(mixedPair1.getChild2().getIdentifier());
+		Gecode::IntVar multiplierLower1 = getTransistorToMultiplierMap().find(mixedPair1.getChild2().getIdentifier());	
 		Gecode::IntVar currentLower1 = getTransistorToCurrentMap().find(mixedPair1.getChild2().getIdentifier());
 		Gecode::IntVar widthLower2 = getTransistorToWidthMap().find(mixedPair2.getChild2().getIdentifier());
+		Gecode::IntVar multiplierLower2 = getTransistorToMultiplierMap().find(mixedPair2.getChild2().getIdentifier());
 		Gecode::IntVar currentLower2 = getTransistorToCurrentMap().find(mixedPair2.getChild2().getIdentifier());
 
 		Gecode::FloatVar widthLower1HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthLower1, widthLower1HelperVar);
+
+		Gecode::FloatVar multiplierLower1HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLower1, multiplierLower1HelperVar);
 
 		Gecode::FloatVar currentLower1HelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentLower1,currentLower1HelperVar);
 
 		Gecode::FloatVar widthLower2HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthLower2, widthLower2HelperVar);
+
+		Gecode::FloatVar multiplierLower2HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLower2, multiplierLower2HelperVar);
 
 		Gecode::FloatVar currentLower2HelperVar(getSpace(), -1000000000 , 1000000000);
 		channel(getSpace(), currentLower2, currentLower2HelperVar);
@@ -447,6 +511,9 @@ namespace AutomaticSizing {
 
 		equalWidthMap_.add(upper1,getPartitioningResult().findComponent(lower1));
 		equalWidthMap_.add(upper2,getPartitioningResult().findComponent(lower2));
+
+		equalMultiplierMap_.add(upper1,getPartitioningResult().findComponent(lower1));
+		equalMultiplierMap_.add(upper2,getPartitioningResult().findComponent(lower2));
 
 		equalLengthMap_.add(upper1, getPartitioningResult().findComponent(upper2));
 		equalLengthMap_.add(lower1, getPartitioningResult().findComponent(lower2));
@@ -476,18 +543,26 @@ namespace AutomaticSizing {
 		const StructRec::Pair & vref1 = static_cast<const StructRec::Pair &>(wideSwingCurrentMirror.getChild1());
 
 		Gecode::IntVar widthLowerVref1 = getTransistorToWidthMap().find(vref1.getChild2().getIdentifier());
+		Gecode::IntVar multiplierLowerVref1 = getTransistorToMultiplierMap().find(vref1.getChild2().getIdentifier());
 		Gecode::IntVar currentLowerVref1 = getTransistorToCurrentMap().find(vref1.getChild2().getIdentifier());
 		Gecode::IntVar widthNTA = getTransistorToWidthMap().find(wideSwingCurrentMirror.getChild2().getIdentifier());
+		Gecode::IntVar multiplierNTA = getTransistorToMultiplierMap().find(wideSwingCurrentMirror.getChild2().getIdentifier());
 		Gecode::IntVar currentNTA = getTransistorToCurrentMap().find(wideSwingCurrentMirror.getChild2().getIdentifier());
 
 
 		Gecode::FloatVar widthLowerVref1HelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthLowerVref1, widthLowerVref1HelperVar);
 
+		Gecode::FloatVar multiplierLowerVref1HelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLowerVref1, multiplierLowerVref1HelperVar);
+
 		Gecode::FloatVar  currentLowerVref1HelperVar = getSpace().createChanneledFloatVar(currentLowerVref1, -1000000000, 1000000000);
 
 		Gecode::FloatVar widthNTAHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthNTA , widthNTAHelperVar);
+
+		Gecode::FloatVar multiplierNTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierNTA , multiplierNTAHelperVar);
 
 		Gecode::FloatVar  currentNTAHelperVar = getSpace().createChanneledFloatVar(currentNTA, -1000000000, 1000000000);
 	}
@@ -511,17 +586,25 @@ namespace AutomaticSizing {
 		const StructRec::Pair & mixedPair = static_cast<const StructRec::Pair &>(wilsonCurrentMirror.getChild2());
 
 		Gecode::IntVar widthNTA = getTransistorToWidthMap().find(wilsonCurrentMirror.getChild1().getIdentifier());
+		Gecode::IntVar multiplierNTA = getTransistorToMultiplierMap().find(wilsonCurrentMirror.getChild1().getIdentifier());
 		Gecode::IntVar currentNTA = getTransistorToCurrentMap().find(wilsonCurrentMirror.getChild1().getIdentifier());
 		Gecode::IntVar widthLowerMP = getTransistorToWidthMap().find(mixedPair.getChild2().getIdentifier());
+		Gecode::IntVar multiplierLowerMP = getTransistorToMultiplierMap().find(mixedPair.getChild2().getIdentifier());
 		Gecode::IntVar currentLowerMP = getTransistorToCurrentMap().find(mixedPair.getChild2().getIdentifier());
 
 		Gecode::FloatVar widthNTAHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthNTA , widthNTAHelperVar);
 
+		Gecode::FloatVar multiplierNTAHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierNTA , multiplierNTAHelperVar);
+
 		Gecode::FloatVar  currentNTAHelperVar = getSpace().createChanneledFloatVar(currentNTA, -1000000000, 1000000000);
 
 		Gecode::FloatVar widthLowerMPHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 		channel(getSpace(), widthLowerMP, widthLowerMPHelperVar);
+
+		Gecode::FloatVar multiplierLowerMPHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierLowerMP, multiplierLowerMPHelperVar);
 
 		Gecode::FloatVar  currentLowerMPHelperVar = getSpace().createChanneledFloatVar(currentLowerMP, -1000000000, 1000000000);
 	}
@@ -550,6 +633,7 @@ namespace AutomaticSizing {
 
 			equalLengthMap_.add(child1, getPartitioningResult().findComponent(child2));
 			equalWidthMap_.add(child1, getPartitioningResult().findComponent(child2));
+			equalMultiplierMap_.add(child1, getPartitioningResult().findComponent(child2));
 		}
 	}
 
@@ -579,9 +663,11 @@ namespace AutomaticSizing {
 
 				equalLengthMap_.add(components, getPartitioningResult());
 				equalWidthMap_.add(diodeComps, getPartitioningResult());
+				equalMultiplierMap_.add(diodeComps, getPartitioningResult());
 
 				if(normalComps.size() == 2)
 					equalWidthMap_.add(normalComps, getPartitioningResult());
+					equalMultiplierMap_.add(normalComps, getPartitioningResult());
 			}
 			else
 			{
@@ -620,6 +706,7 @@ namespace AutomaticSizing {
 						{
 							equalLengthMap_.add(sameGateNetComps, getPartitioningResult());
 							equalWidthMap_.add(sameGateNetComps, getPartitioningResult());
+							equalMultiplierMap_.add(sameGateNetComps, getPartitioningResult());
 						}
 					}
 				}
@@ -887,10 +974,13 @@ namespace AutomaticSizing {
 			assert(secondStageSupplyComp != nullptr, "Every second stage should have a supply connected component");
 
 			Gecode::IntVar widthTransSecondStage = getTransistorToWidthMap().find(*secondStageSupplyComp);
+			Gecode::IntVar multiplierTransSecondStage = getTransistorToMultiplierMap().find(*secondStageSupplyComp);
 			Gecode::IntVar lengthTransSecondStage = getTransistorToLengthMap().find(*secondStageSupplyComp);
 
 			Gecode::FloatVar widthTransSecondStageHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 			channel(getSpace(), widthTransSecondStage , widthTransSecondStageHelperVar);
+			Gecode::FloatVar multiplierTransSecondStageHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+			channel(getSpace(), multiplierTransSecondStage , multiplierTransSecondStageHelperVar);
 			Gecode::FloatVar lengthTransSecondStageHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 			channel(getSpace(), lengthTransSecondStage , lengthTransSecondStageHelperVar);
 
@@ -910,10 +1000,13 @@ namespace AutomaticSizing {
 					if(compLoad.size() == 2 && !loadPart->hasBiasPart())
 					{
 						Gecode::IntVar widthLoad = getTransistorToWidthMap().find(**compLoad.begin());
+						Gecode::IntVar multiplierLoad = getTransistorToMultiplierMap().find(**compLoad.begin());
 						Gecode::IntVar lengthLoad = getTransistorToLengthMap().find(**compLoad.begin());
 
 						Gecode::FloatVar widthLoadHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 						channel(getSpace(), widthLoad , widthLoadHelperVar);
+						Gecode::FloatVar multiplierLoadHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+						channel(getSpace(), multiplierLoad , multiplierLoadHelperVar);
 						Gecode::FloatVar lengthLoadHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 						channel(getSpace(), lengthLoad , lengthLoadHelperVar);
 
@@ -921,10 +1014,10 @@ namespace AutomaticSizing {
 						Gecode::FloatVar currentLoadHelperVar = getSpace().createChanneledFloatVar(currentLoad, -1000000000, 1000000000);
 
 
-						Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthLoadHelperVar*currentLoadHelperVar)
-												/(widthLoadHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
-						Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthLoadHelperVar*currentLoadHelperVar)
-												/(widthLoadHelperVar * lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
+						Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthLoadHelperVar*currentLoadHelperVar)
+												/(widthLoadHelperVar * multiplierLoadHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
+						Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthLoadHelperVar*currentLoadHelperVar)
+												/(widthLoadHelperVar * multiplierLoadHelperVar* lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
 					}
 					else if(compLoad.size() > 2)
 					{
@@ -961,29 +1054,35 @@ namespace AutomaticSizing {
 
 
 									Gecode::IntVar widthInnerComp = getTransistorToWidthMap().find(*innerComp);
+									Gecode::IntVar multiplierInnerComp = getTransistorToMultiplierMap().find(*innerComp);
 									Gecode::IntVar lengthInnerComp = getTransistorToLengthMap().find(*innerComp);
 
 									Gecode::FloatVar widthInnerCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 									channel(getSpace(), widthInnerComp , widthInnerCompHelperVar);
+									Gecode::FloatVar multiplierInnerCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+									channel(getSpace(), multiplierInnerComp , multiplierInnerCompHelperVar);
 									Gecode::FloatVar lengthInnerCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 									channel(getSpace(), lengthInnerComp , lengthInnerCompHelperVar);
 
 									Gecode::IntVar widthSupplyComp = getTransistorToWidthMap().find(supplyComp);
+									Gecode::IntVar multiplierSupplyComp = getTransistorToMultiplierMap().find(supplyComp);
 									Gecode::IntVar lengthSupplyComp = getTransistorToLengthMap().find(supplyComp);
 
 									Gecode::FloatVar widthSupplyCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 									channel(getSpace(), widthSupplyComp , widthSupplyCompHelperVar);
+									Gecode::FloatVar multiplierSupplyCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+									channel(getSpace(), multiplierSupplyComp , multiplierSupplyCompHelperVar);
 									Gecode::FloatVar lengthSupplyCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 									channel(getSpace(), lengthSupplyComp , lengthSupplyCompHelperVar);
 
 
-									rel(getSpace(), sqrt(2* currentLoadHelperVar* lengthSupplyCompHelperVar/ (muCox *widthSupplyCompHelperVar))
-											+ sqrt(2* currentLoadHelperVar* lengthInnerCompHelperVar/ (muCox *widthInnerCompHelperVar))
-											>= 0.9 * sqrt(2* currentSecondStageHelperVar* lengthTransSecondStageHelperVar/ (muCox *widthTransSecondStageHelperVar)) );
+									rel(getSpace(), sqrt(2* currentLoadHelperVar* lengthSupplyCompHelperVar/ (muCox *widthSupplyCompHelperVar*multiplierSupplyCompHelperVar))
+											+ sqrt(2* currentLoadHelperVar* lengthInnerCompHelperVar/ (muCox *widthInnerCompHelperVar*multiplierInnerCompHelperVar))
+											>= 0.9 * sqrt(2* currentSecondStageHelperVar* lengthTransSecondStageHelperVar/ (muCox *widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar)) );
 
-									rel(getSpace(), sqrt(2* currentLoadHelperVar* lengthSupplyCompHelperVar/ (muCox *widthSupplyCompHelperVar))
-											+ sqrt(2* currentLoadHelperVar* lengthInnerCompHelperVar/ (muCox *widthInnerCompHelperVar))
-											<= 1.1 * sqrt(2* currentSecondStageHelperVar* lengthTransSecondStageHelperVar/ (muCox *widthTransSecondStageHelperVar)) );
+									rel(getSpace(), sqrt(2* currentLoadHelperVar* lengthSupplyCompHelperVar/ (muCox *widthSupplyCompHelperVar*multiplierSupplyCompHelperVar))
+											+ sqrt(2* currentLoadHelperVar* lengthInnerCompHelperVar/ (muCox *widthInnerCompHelperVar*multiplierInnerCompHelperVar))
+											<= 1.1 * sqrt(2* currentSecondStageHelperVar* lengthTransSecondStageHelperVar/ (muCox *widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar)) );
 
 								}
 							}
@@ -1001,10 +1100,13 @@ namespace AutomaticSizing {
 										{
 											Gecode::IntVar currentLoad = getTransistorToCurrentMap().find(*innerComp);
 											Gecode::IntVar widthSupplyComp = getTransistorToWidthMap().find(supplyComp);
+											Gecode::IntVar multiplierSupplyComp = getTransistorToMultiplierMap().find(supplyComp);
 											Gecode::IntVar lengthSupplyComp = getTransistorToLengthMap().find(supplyComp);
 
 											Gecode::FloatVar widthSupplyCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 											channel(getSpace(), widthSupplyComp , widthSupplyCompHelperVar);
+											Gecode::FloatVar multiplierSupplyCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+											channel(getSpace(), multiplierSupplyComp , multiplierSupplyCompHelperVar);
 											Gecode::FloatVar lengthSupplyCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 											channel(getSpace(), lengthSupplyComp , lengthSupplyCompHelperVar);
 
@@ -1013,10 +1115,10 @@ namespace AutomaticSizing {
 
 
 
-											Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthSupplyCompHelperVar*currentLoadHelperVar)
-																	/(widthSupplyCompHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
-											Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthSupplyCompHelperVar*currentLoadHelperVar)
-																	/(widthSupplyCompHelperVar * lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
+											Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthSupplyCompHelperVar*currentLoadHelperVar)
+																	/(widthSupplyCompHelperVar * multiplierSupplyCompHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
+											Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthSupplyCompHelperVar*currentLoadHelperVar)
+																	/(widthSupplyCompHelperVar * multiplierSupplyCompHelperVar * lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
 										}
 									}
 								}
@@ -1069,20 +1171,23 @@ namespace AutomaticSizing {
 							{
 								Gecode::IntVar currentLoad = getTransistorToCurrentMap().find(*innerSupplyComp);
 								Gecode::IntVar widthInnerSupplyComp = getTransistorToWidthMap().find(*innerSupplyComp);
+								Gecode::IntVar multiplierInnerSupplyComp = getTransistorToMultiplierMap().find(*innerSupplyComp);
 								Gecode::IntVar lengthInnerSupplyComp = getTransistorToLengthMap().find(*innerSupplyComp);
 
 								Gecode::FloatVar widthInnerSupplyCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 								channel(getSpace(), widthInnerSupplyComp , widthInnerSupplyCompHelperVar);
+								Gecode::FloatVar multiplierInnerSupplyCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+								channel(getSpace(), multiplierInnerSupplyComp , multiplierInnerSupplyCompHelperVar);
 								Gecode::FloatVar lengthInnerSupplyCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 								channel(getSpace(), lengthInnerSupplyComp , lengthInnerSupplyCompHelperVar);
 
 								Gecode::FloatVar currentLoadHelperVar = getSpace().createChanneledFloatVar(currentLoad, -1000000000, 1000000000);
 
 
-								Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthInnerSupplyCompHelperVar*currentLoadHelperVar)
-														/(widthInnerSupplyCompHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
-								Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*lengthInnerSupplyCompHelperVar*currentLoadHelperVar)
-														/(widthInnerSupplyCompHelperVar * lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
+								Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthInnerSupplyCompHelperVar*currentLoadHelperVar)
+														/(widthInnerSupplyCompHelperVar * multiplierInnerSupplyCompHelperVar * lengthTransSecondStageHelperVar * currentSecondStageHelperVar) >= 0.9));
+								Gecode::rel(getSpace(), ((widthTransSecondStageHelperVar*multiplierTransSecondStageHelperVar*lengthInnerSupplyCompHelperVar*currentLoadHelperVar)
+														/(widthInnerSupplyCompHelperVar * multiplierInnerSupplyCompHelperVar* lengthTransSecondStageHelperVar*currentSecondStageHelperVar) <= 1.1));
 							}
 						}
 					}
@@ -1127,10 +1232,13 @@ namespace AutomaticSizing {
 					{
 						Gecode::IntVar currentFeedbackLoadComp = getTransistorToCurrentMap().find(*feedbackLoadComp);
 						Gecode::IntVar widthFeedbackLoadComp = getTransistorToWidthMap().find(*feedbackLoadComp);
+						Gecode::IntVar multiplierFeedbackLoadComp = getTransistorToMultiplierMap().find(*feedbackLoadComp);
 						Gecode::IntVar lengthFeedbackLoadComp = getTransistorToLengthMap().find(*feedbackLoadComp);
 
 						Gecode::FloatVar widthFeedbackLoadCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 						channel(getSpace(), widthFeedbackLoadComp , widthFeedbackLoadCompHelperVar);
+						Gecode::FloatVar multiplierFeedbackLoadCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+						channel(getSpace(), multiplierFeedbackLoadComp , multiplierFeedbackLoadCompHelperVar);
 						Gecode::FloatVar lengthFeedbackLoadCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 						channel(getSpace(), lengthFeedbackLoadComp , lengthFeedbackLoadCompHelperVar);
 
@@ -1140,21 +1248,24 @@ namespace AutomaticSizing {
 						{
 							Gecode::IntVar currentOpAmpLoadComp = getTransistorToCurrentMap().find(*opAmpLoadComp);
 							Gecode::IntVar widthOpAmpLoadComp = getTransistorToWidthMap().find(*opAmpLoadComp);
+							Gecode::IntVar multiplierOpAmpLoadComp = getTransistorToMultiplierMap().find(*opAmpLoadComp);
 							Gecode::IntVar lengthOpAmpLoadComp = getTransistorToLengthMap().find(*opAmpLoadComp);
 
 							Gecode::FloatVar widthOpAmpLoadCompHelperVar(getSpace(), 1 , getSpace().getWidthUpperBound());
 							channel(getSpace(), widthOpAmpLoadComp , widthOpAmpLoadCompHelperVar);
+							Gecode::FloatVar multiplierOpAmpLoadCompHelperVar(getSpace(), 1 , getSpace().getMultiplierUpperBound());
+							channel(getSpace(), multiplierOpAmpLoadComp , multiplierOpAmpLoadCompHelperVar);
 							Gecode::FloatVar lengthOpAmpLoadCompHelperVar(getSpace(), 1 , getSpace().getLengthUpperBound());
 							channel(getSpace(), lengthOpAmpLoadComp , lengthOpAmpLoadCompHelperVar);
 
 							Gecode::FloatVar currentOpAmpLoadCompHelperVar = getSpace().createChanneledFloatVar(currentOpAmpLoadComp, -1000000000, 1000000000);
 
 
-							rel(getSpace(), (currentOpAmpLoadCompHelperVar* lengthOpAmpLoadCompHelperVar * widthFeedbackLoadCompHelperVar) /
-									(currentFeedbackLoadCompHelperVar * widthOpAmpLoadCompHelperVar * lengthFeedbackLoadCompHelperVar) > 0.9);
+							rel(getSpace(), (currentOpAmpLoadCompHelperVar* lengthOpAmpLoadCompHelperVar * widthFeedbackLoadCompHelperVar * multiplierFeedbackLoadCompHelperVar) /
+									(currentFeedbackLoadCompHelperVar * widthOpAmpLoadCompHelperVar * multiplierOpAmpLoadCompHelperVar * lengthFeedbackLoadCompHelperVar) > 0.9);
 
-							rel(getSpace(), (currentOpAmpLoadCompHelperVar* lengthOpAmpLoadCompHelperVar * widthFeedbackLoadCompHelperVar) /
-									(currentFeedbackLoadCompHelperVar * widthOpAmpLoadCompHelperVar * lengthFeedbackLoadCompHelperVar) < 1.1);
+							rel(getSpace(), (currentOpAmpLoadCompHelperVar* lengthOpAmpLoadCompHelperVar * widthFeedbackLoadCompHelperVar * multiplierFeedbackLoadCompHelperVar) /
+									(currentFeedbackLoadCompHelperVar * widthOpAmpLoadCompHelperVar * multiplierOpAmpLoadCompHelperVar * lengthFeedbackLoadCompHelperVar) < 1.1);
 						}
 
 					}
@@ -1183,6 +1294,7 @@ namespace AutomaticSizing {
 			equalTransComps.insert(equalTransComps.end(), compSecondStage2.begin(), compSecondStage2.end());
 
 			equalWidthMap_.add(equalTransComps, getPartitioningResult());
+			equalMultiplierMap_.add(equalTransComps, getPartitioningResult());
 			equalLengthMap_.add(equalTransComps, getPartitioningResult());
 		}
 		else if(compSecondStage1.size() == 2 && compSecondStage2.size() == 2)
@@ -1217,9 +1329,11 @@ namespace AutomaticSizing {
 			assert(equalTransCompsSupply.size() == 2 && equalTransCompsOutput.size() == 2, "There should be two output and supply comps in the two second stages!");
 
 			equalWidthMap_.add(equalTransCompsSupply, getPartitioningResult());
+			equalMultiplierMap_.add(equalTransCompsSupply, getPartitioningResult());
 			equalLengthMap_.add(equalTransCompsSupply, getPartitioningResult());
 
 			equalWidthMap_.add(equalTransCompsOutput, getPartitioningResult());
+			equalMultiplierMap_.add(equalTransCompsOutput, getPartitioningResult());
 			equalLengthMap_.add(equalTransCompsOutput, getPartitioningResult());
 		}
 		else
@@ -1253,6 +1367,7 @@ namespace AutomaticSizing {
 		}
 
 		equalWidthMap_.add(equalBiasComps, getPartitioningResult());
+		equalMultiplierMap_.add(equalBiasComps, getPartitioningResult());
 		equalLengthMap_.add(equalBiasComps, getPartitioningResult());
 
 	}
@@ -1271,6 +1386,7 @@ namespace AutomaticSizing {
 				if(transPartComps.size() == 4)
 				{
 					equalWidthMap_.add(transPartComps, getPartitioningResult());
+					equalMultiplierMap_.add(transPartComps, getPartitioningResult());
 					equalLengthMap_.add(transPartComps, getPartitioningResult());
 				}
 				else
@@ -1287,6 +1403,7 @@ namespace AutomaticSizing {
 					if(referenceVoltageInputComps.size() > 1)
 					{
 						equalWidthMap_.add(referenceVoltageInputComps, getPartitioningResult());
+						equalMultiplierMap_.add(referenceVoltageInputComps, getPartitioningResult());
 						equalLengthMap_.add(referenceVoltageInputComps, getPartitioningResult());
 					}
 
@@ -1302,6 +1419,7 @@ namespace AutomaticSizing {
 				if(equalBiasComps.size() > 1)
 				{
 					equalWidthMap_.add(equalBiasComps, getPartitioningResult());
+					equalMultiplierMap_.add(equalBiasComps, getPartitioningResult());
 					equalLengthMap_.add(equalBiasComps, getPartitioningResult());
 				}
 
@@ -1316,6 +1434,7 @@ namespace AutomaticSizing {
 				if(equalLoadComps.size() > 1)
 				{
 					equalWidthMap_.add(equalLoadComps, getPartitioningResult());
+					equalMultiplierMap_.add(equalLoadComps, getPartitioningResult());
 					equalLengthMap_.add(equalLoadComps, getPartitioningResult());
 				}
 
@@ -1405,6 +1524,7 @@ namespace AutomaticSizing {
 			if(isPartOfFourTransistorCurrentMirror)
 			{
 				equalWidthMap_.add(getPartitioningResult().findComponents(mainStructure), getPartitioningResult());
+				equalMultiplierMap_.add(getPartitioningResult().findComponents(mainStructure), getPartitioningResult());
 				equalLengthMap_.add(getPartitioningResult().findComponents(mainStructure), getPartitioningResult());
 			}
 			else if(isWideSwingCascodeCurrentMirror || isPartOfImprovedWilsonCurrentMirror || isPartOfCascodeCurrentMirror)
@@ -1553,9 +1673,10 @@ namespace AutomaticSizing {
 					{
 						int Amin = getCircuitInformation().getTechnologieSpecificationSHM(*comp).getMinArea();
 						Gecode::IntVar width = getTransistorToWidthMap().find(*comp);
+						Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(*comp);
 						Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
 
-						rel(getSpace(), width * length <= 2* Amin);
+						rel(getSpace(), width * multiplier * length <= 2* Amin);
 					}
 				}
 			}
@@ -1640,21 +1761,24 @@ namespace AutomaticSizing {
 								assert(vrefInputComp != nullptr, "There should be one component connected to vref");
 
 								Gecode::IntVar widthVrefComp = getTransistorToWidthMap().find(*vrefInputComp);
+								Gecode::IntVar multiplierVrefComp = getTransistorToMultiplierMap().find(*vrefInputComp);
 								Gecode::IntVar lengthVrefComp = getTransistorToLengthMap().find(*vrefInputComp);
 
 								Gecode::IntVar widthOtherComp = getTransistorToWidthMap().find(*otherComp);
+								Gecode::IntVar multiplierOtherComp = getTransistorToMultiplierMap().find(*otherComp);
 								Gecode::IntVar lengthOtherComp = getTransistorToLengthMap().find(*otherComp);
 
-								rel(getSpace(), widthOtherComp == 2 * widthVrefComp);
+								rel(getSpace(), widthOtherComp * multiplierOtherComp == 2 * widthVrefComp * multiplierVrefComp);
 								rel(getSpace(), lengthOtherComp == lengthVrefComp);
 
 								Partitioning::TransconductancePart & firstStage = getPartitioningResult().getFirstStage();
 								Partitioning::Component & firstStageComp = **getPartitioningResult().getBelongingComponents(firstStage).begin();
 
 								Gecode::IntVar widthFirstStageComp = getTransistorToWidthMap().find(firstStageComp);
+								Gecode::IntVar multiplierFirstStageComp = getTransistorToMultiplierMap().find(firstStageComp);
 								Gecode::IntVar lengthFirstStageComp = getTransistorToLengthMap().find(firstStageComp);
 
-								rel(getSpace(), widthOtherComp == widthFirstStageComp);
+								rel(getSpace(), widthOtherComp * multiplierOtherComp == widthFirstStageComp * multiplierFirstStageComp);
 								rel(getSpace(), lengthOtherComp == lengthFirstStageComp);
 
 							}
@@ -1693,6 +1817,7 @@ namespace AutomaticSizing {
 					if(resTran1 != nullptr && resTran2 != nullptr)
 					{
 						equalWidthMap_.add({resTran1, resTran2}, getPartitioningResult());
+						equalMultiplierMap_.add({resTran1, resTran2}, getPartitioningResult());
 						equalLengthMap_.add({resTran1, resTran2}, getPartitioningResult());
 					}
 				}
@@ -1710,6 +1835,7 @@ namespace AutomaticSizing {
 					{
 						std::vector<Partitioning::Component *> comps = getPartitioningResult().getBelongingComponents(*posFeedbackPart);
 						equalWidthMap_.add(comps, getPartitioningResult());
+						equalMultiplierMap_.add(comps, getPartitioningResult());
 						equalLengthMap_.add(comps, getPartitioningResult());
 					}
 				}

@@ -54,6 +54,7 @@ namespace AutomaticSizing {
 		circuitInformation_(NULL),
 		graph_(NULL),
 		structRecResult_(NULL),
+		ekvVersion_(NOT_INITIALIZED_),
 		runtime_(NOT_INITIALIZED_)
 	{
 	}
@@ -128,6 +129,7 @@ namespace AutomaticSizing {
 		searchSpace_.setGraph(getGraph());
 		searchSpace_.setStructureRecognitionResult(getStructureRecognitionResult());
 		searchSpace_.setTransistorModel(getTransistorModel());
+		searchSpace_.setEKVVersion(getEKVVersion());
 		searchSpace_.setDefinition(getDefinition());
 		searchSpace_.initialize();
 	}
@@ -218,6 +220,17 @@ namespace AutomaticSizing {
 	{
 		assert(transistorModel_ == "SHM" || transistorModel_ == "EKV", "Transistor model not supported");
 		return transistorModel_;
+	}
+
+	void AutomaticSizing::setEKVVersion(int version)
+	{
+		ekvVersion_ = version;
+	}
+
+	int AutomaticSizing::getEKVVersion() const
+	{
+		assert(ekvVersion_ == 1 || ekvVersion_ == 2 || ekvVersion_ == 3, "EKV version not supported");
+		return ekvVersion_;
 	}
 
 	void AutomaticSizing::setDefinition(std::string definition)

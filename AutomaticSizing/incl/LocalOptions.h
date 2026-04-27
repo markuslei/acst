@@ -76,6 +76,7 @@ namespace AutomaticSizing {
         TechnologieFileSHM getTechnologieFileSHM() const;
 
         std::string getTransistorModel() const;
+        int getEKVVersion() const;
         std::string getScaling() const;
         int getRuntime() const;
 

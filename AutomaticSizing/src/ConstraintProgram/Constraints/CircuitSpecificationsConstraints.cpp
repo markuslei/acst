@@ -74,6 +74,7 @@ namespace AutomaticSizing {
 			circuitInformation_(NULL),
 			graph_(NULL),
 			transistorToWidthMap_(NULL),
+			transistorToMultiplierMap_(NULL),
 			transistorToLengthMap_(NULL),
 			transistorToCurrentMap_(NULL),
 			twoPortToValueMap_(NULL),
@@ -111,6 +112,12 @@ namespace AutomaticSizing {
 		transistorToWidthMap_ = & widthMap;
 	}
 
+	void CircuitSpecificationsConstraints::setTransistorToMultiplierMap(
+		ComponentToIntVarMap& multiplierMap)
+	{
+		transistorToMultiplierMap_ = & multiplierMap;
+	}
+
 	void CircuitSpecificationsConstraints::setTransistorToLengthMap(
 		ComponentToIntVarMap& lengthMap)
 	{
@@ -131,83 +138,117 @@ namespace AutomaticSizing {
 
 	void CircuitSpecificationsConstraints::createConstraints()
 	{
+		auto chk = [&](const char* tag){
+  			if (getSpace().status() == Gecode::SS_FAILED) {
+    			logDebug(std::string("SS_FAILED after: ") + tag);
+  			}
+		};
+
+
 		logDebug("      CreatePolesAndZeros");
 		createPolesAndZeros();
 
 		logDebug("     Create gain constraint");
 		Gecode::FloatVar gain = calculateGain();
 		createGainConstraint(gain);
+		chk("after gain constraint");
 
 		logDebug("     Create simple second stage transconductance constraint");
 		createSimpleSecondStageTransconductanceConstraint();
+		chk("after simple second stage transconductance constraint");
 
 		logDebug("     Create Power Constraint");
 		Gecode::FloatVar powerConsumption = calculatePowerConsumption();
 		createPowerConsumptionConstraint(powerConsumption);
+		chk("after power constraint");
 
 		logDebug("      Calculate TransientFrequency Constraints");
 		Gecode::FloatVar transitFrequency = calculateTransientFrequency();
 		logDebug("      Create TransientFrequency Constraints");
 		createTransientFrequencyConstraint(transitFrequency);
+		chk("after transient frequency constraint");
 		logDebug("      Calculate TransientFrequency Constraints With Error Factor");
 		Gecode::FloatVar transitFrequencyWithErrorFactor = calculateTransientFrequencyWithErrorFactor();
 		logDebug("      Create TransientFrequency Constraints With Error Factor");
 		createTransientFrequencyConstraintWithErrorFactor(transitFrequencyWithErrorFactor);
+		chk("after transient frequency constraint with error factor");
 
 		logDebug("     Create CompensationCapacitance Constraints");
 		createCompensationCapacitanceConstraint();
+		chk("after compensation capacitance constraint");
 
 		logDebug("     Create Area Constraint");
 		Gecode::FloatVar area = calculateArea();
 		createAreaConstraint(area);
+		chk("after area constraint");
 
 		logDebug("      CreatePhaseMarginConstraint");
 		Gecode::FloatVar phaseMargin = calculatePhaseMargin();
 		createPhaseMarginConstraint(phaseMargin);
+		chk("after phase margin constraint");
 
 		logDebug("     Create SlewRate Constraints");
  		Gecode::FloatVar slewRate = calculateSlewRate();
 		createSlewRateConstraint(slewRate);
+		chk("after slew rate constraint");
 
 		logDebug("     Create CommonModeInputVoltageConstraint");
 		Gecode::FloatVar vcmMin, vcmMax;
 		std::tie(vcmMin, vcmMax ) = calculateCommonModeInputVoltage();
 		createCommonModeInputVoltageConstraint(vcmMin, vcmMax);
+		chk("after common mode input voltage constraint");
 
 		logDebug("     createBiasOfCascodedPairCurrentConstrain");
 		createBiasOfCascodedPairCurrentConstraint();
+		chk("after bias of cascoded pair current constraint");
 
 		logDebug("     Create CMRR Constraints");
 		Gecode::FloatVar CMRR = calculateCMRR();
 		createCMRRConstraint(CMRR);
+		chk("after CMRR constraint");
 
 		logDebug("     Create OutputVoltageSwing Constraints");
 		Gecode::FloatVar voutMin, voutMax;
 		std::tie(voutMin, voutMax) = calculateOutputVoltageSwing();
 		createOutputVoltageSwingConstraint(voutMin, voutMax);
+		chk("after output voltage swing constraint");
 
 		logDebug("     Create PSRR Constraints");
 		Gecode::FloatVar negPSRR, posPSRR;
 		std::tie(negPSRR, posPSRR) = calculatePSRR();
 		createPSRRConstraint(negPSRR, posPSRR);
+		chk("after PSRR constraint");
 
 		logDebug("    Create Complementary First Stage Constraint");
 		createComplementaryFirstStageConstraint();
+		chk("after complementary first stage constraint");
 
 		logDebug("       Create Scalability Factor Limitation for symmetrical OTA Constraint");
 		createScalibiltyFactorLimitationForSymmetricalOTAConstraint();
+		chk("after scalability factor limitation for symmetrical OTA constraint");
 
 		createInnerVoltageBiasOfTelescopicOpAmpsConstraint();
+		chk("after inner voltage bias of telescopic op amps constraint");
 
 		logDebug("             Creating Feed Back Circuit Constraint");
 		createFeedbackCircuitConstraints();
+		chk("after feedback circuit constraint");
 
 
 		createOutputNetVoltageConstraintFirstStage();
+		chk("after output net voltage constraint first stage");
 	}
+
+
 
 	void CircuitSpecificationsConstraints::createOptimizingConstraints()
 	{
+		auto chk = [&](const char* tag){
+  			if (getSpace().status() == Gecode::SS_FAILED) {
+    			logDebug(std::string("SS_FAILED after: ") + tag);
+  			}
+		};
+
 		logDebug("      CreatePolesAndZeros");
 		createPolesAndZeros();
 
@@ -216,10 +257,12 @@ namespace AutomaticSizing {
 
 		logDebug("     Create simple second stage transconductance constraint");
 		createSimpleSecondStageTransconductanceConstraint();
+		chk("after simple second stage transconductance constraint");
 
 		logDebug("     Create Power Constraint");
 		Gecode::FloatVar powerConsumption = calculatePowerConsumption();
 		createPowerConsumptionConstraint(powerConsumption);
+		chk("after power constraint");
 
 		logDebug("      Calculate TransientFrequency Constraints");
 		calculateTransientFrequency();
@@ -230,14 +273,17 @@ namespace AutomaticSizing {
 
 		logDebug("     Create CompensationCapacitance Constraints");
 		createCompensationCapacitanceConstraint();
+		chk("after compensation capacitance constraint");
 
 		logDebug("     Create Area Constraint");
 		Gecode::FloatVar area = calculateArea();
 		createAreaConstraint(area);
+		chk("after area constraint");
 
 		logDebug("      CreatePhaseMarginConstraint");
 		Gecode::FloatVar phaseMargin = calculatePhaseMargin();
 		createPhaseMarginConstraint(phaseMargin);
+		chk("after phase margin constraint");
 
 		logDebug("     Create SlewRate Constraints");
  		calculateSlewRate();
@@ -246,13 +292,16 @@ namespace AutomaticSizing {
 		Gecode::FloatVar vcmMin, vcmMax;
 		std::tie(vcmMin, vcmMax ) = calculateCommonModeInputVoltage();
 		createCommonModeInputVoltageConstraint(vcmMin, vcmMax);
+		chk("after common mode input voltage constraint");
 
 		logDebug("     createBiasOfCascodedPairCurrentConstrain");
 		createBiasOfCascodedPairCurrentConstraint();
+		chk("after bias of cascoded pair current constraint");
 
 		logDebug("     Create CMRR Constraints");
 		Gecode::FloatVar CMRR = calculateCMRR();
 		createCMRRConstraint(CMRR);
+		chk("after CMRR constraint");
 
 		logDebug("     Create OutputVoltageSwing Constraints");
 		calculateOutputVoltageSwing();
@@ -262,16 +311,21 @@ namespace AutomaticSizing {
 
 		logDebug("    Create Complementary First Stage Constraint");
 		createComplementaryFirstStageConstraint();
+		chk("after complementary first stage constraint");
 
 		logDebug("       Create Scalability Factor Limitation for symmetrical OTA Constraint");
 		createScalibiltyFactorLimitationForSymmetricalOTAConstraint();
+		chk("after scalability factor limitation for symmetrical OTA constraint");
 
 		createInnerVoltageBiasOfTelescopicOpAmpsConstraint();
+		chk("after inner voltage bias of telescopic op amps constraint");
 
 		logDebug("             Creating Feed Back Circuit Constraint");
 		createFeedbackCircuitConstraints();
+		chk("after feedback circuit constraint");
 
 		createOutputNetVoltageConstraintFirstStage();
+		chk("after output net voltage constraint first stage");
 	}
 
 	void CircuitSpecificationsConstraints::setTwoPortToValueMap(
@@ -309,6 +363,12 @@ namespace AutomaticSizing {
 	{
 		assert(transistorToWidthMap_ != NULL);
 		return *transistorToWidthMap_;
+	}
+
+	const ComponentToIntVarMap& CircuitSpecificationsConstraints::getTransistorToMultiplierMap() const
+	{
+		assert(transistorToMultiplierMap_ != NULL);
+		return *transistorToMultiplierMap_;
 	}
 
 	const ComponentToIntVarMap& CircuitSpecificationsConstraints::getTransistorToLengthMap() const
@@ -881,7 +941,7 @@ namespace AutomaticSizing {
 			current[index] = Gecode::expr(getSpace(), biasCurrentGecode);
 		}
 
-
+		logDebug("index: " << index);
 		Gecode::linear(getSpace(), vdd, current, Gecode::FRT_EQ, power);
 
 		getSpace().setPowerConsumption(power);
@@ -954,7 +1014,16 @@ namespace AutomaticSizing {
 				}
 			}
 
-			float vthP = getCircuitInformation().getTechnologieSpecificationSHMPmos().getThresholdVoltage();
+			float vthP;
+			if(getTransistorModel() =="SHM")
+			{
+				vthP = getCircuitInformation().getTechnologieSpecificationSHMPmos().getThresholdVoltage();
+			}
+			else
+			{
+				vthP = getCircuitInformation().getTechnologieSpecificationEKVPmos().getThresholdVoltage_LMIN1200_LMAX2100();
+			}
+
 
 			Gecode::FloatVar voutMaxValue(getSpace(), -1000000000000, 1000000000000);
 			voutMaxValues[vddToOutputPathIndex] = voutMaxValue;
@@ -1013,7 +1082,18 @@ namespace AutomaticSizing {
 				}
 			}
 
-			float vthN = getCircuitInformation().getTechnologieSpecificationSHMNmos().getThresholdVoltage();
+			float vthN;
+			if(getTransistorModel() =="SHM")
+			{
+				vthN = getCircuitInformation().getTechnologieSpecificationSHMNmos().getThresholdVoltage();
+			}
+			else
+			{
+				vthN = getCircuitInformation().getTechnologieSpecificationEKVNmos().getThresholdVoltage_LMIN1200_LMAX2100();
+			}
+
+			
+
 			Gecode::FloatVar voutMinValue(getSpace(), -10000, 10000);
 			voutMinValues[outputToGroundPathIndex] = voutMinValue;
 			outputToGroundPathIndex++;
@@ -1056,17 +1136,65 @@ namespace AutomaticSizing {
 
 		Partitioning::TransconductancePart & firstStage = getPartitioningResult().getFirstStage();
 		Partitioning::Component * diffStageTran = *getPartitioningResult().getBelongingComponents(firstStage).begin();
-		float vthFirstStage;
+		Gecode::IntVar length = getTransistorToLengthMap().find(*diffStageTran);
+		Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+		channel(getSpace(), length, lengthHelper);
+		Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+		logDebug("normedLength domain: " << normedLength);
+
+		Gecode::FloatVar vthFirstStage (getSpace(), -0.5, 0.5);
 		if(getTransistorModel() =="SHM")
 		{
 				const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(*diffStageTran);
-				vthFirstStage = techSpec.getThresholdVoltage();
+				Gecode::rel(getSpace(), vthFirstStage == techSpec.getThresholdVoltage());
 		}
 		else
 		{
 				const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*diffStageTran);
-				vthFirstStage = techSpec.getThresholdVoltage();
+				/* */
+				Gecode::IntVar idx(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+				Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));
+				Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+				Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+				Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+				
+				float vth_list[5];
+				vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+				vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+				vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+				vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+				vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idx == i) >> (vthFirstStage == vth_list[i]));
+				}
+				//Gecode::rel(getSpace(), vthFirstStage == techSpec.getThresholdVoltage_LMIN1200_LMAX2100());
 		}
+
+		Edge * drainSourceEdge = NULL;
+		Edge * gateSourceEdge = NULL;
+		std::vector<Edge*> edges = getGraph().findToComponentBelongingEdges(*diffStageTran);
+		for(std::vector<Edge*>::const_iterator it = edges.begin(); it != edges.end(); it++)
+		{
+			Edge* edge = *it;
+			if(edge->isDrainSourceEdge())
+			{
+					drainSourceEdge = edge;
+			}
+			else if (edge->isGateSourceEdge())
+			{
+				   gateSourceEdge = edge;
+			}
+		}
+		assert(drainSourceEdge != NULL, "No drainSourceEdge found!");
+		if(gateSourceEdge == NULL)
+		{
+			gateSourceEdge = drainSourceEdge;
+		}
+		Gecode::FloatVar vgsFirstStage = computeEdgeVoltage(*gateSourceEdge);
+		Gecode::FloatVar vdsFirstStage = computeEdgeVoltage(*drainSourceEdge);
 
 		Gecode::FloatValArgs signInputToSupplyRailPathOverLoad(inputToSupplyRailPathOverLoad.size() -1);
 		Gecode::FloatVarArgs voltageInputToSupplyRailPathOverLoad(inputToSupplyRailPathOverLoad.size() -1);
@@ -1143,6 +1271,11 @@ namespace AutomaticSizing {
 			float constantInputToSupplyRailPathOverLoad = 0;
 			for(auto & comp : inputToSupplyRailPathOverLoad)
 			{
+				Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), length, lengthHelper);
+				Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+					
 				float vth;
 				if(getTransistorModel() =="SHM")
 				{
@@ -1152,7 +1285,26 @@ namespace AutomaticSizing {
 				else
 				{
 					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-					vth = techSpec.getThresholdVoltage();
+					/* 
+					Gecode::IntVar idx(getSpace(), 0, 4);
+					Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+					Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));
+					Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+					Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+					Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+				
+					float vth_list[5];
+					vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+					vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+					vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+					vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+					vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				
+					for (int i =0; i<5; i++)
+					{
+						Gecode::rel(getSpace(), (idx == i) >> (vth == vth_list[i]));
+					}*/
+					vth = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
 				}
 
 				if(comp->getPart().isTransconductancePart())
@@ -1180,6 +1332,10 @@ namespace AutomaticSizing {
 			float constantInputToSupplyRailPathOverLoad = 0;
 			for(auto & comp : inputToSupplyRailPathOverLoad)
 			{
+				Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), length, lengthHelper);
+				Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
 				float vth;
 				if(getTransistorModel() =="SHM")
 				{
@@ -1189,7 +1345,27 @@ namespace AutomaticSizing {
 				else
 				{
 					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-					vth = techSpec.getThresholdVoltage();
+					/* 
+					Gecode::IntVar idx(getSpace(), 0, 4);
+					Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+					Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));
+					Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+					Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+					Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+	   
+				
+					float vth_list[5];
+					vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+					vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+					vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+					vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+					vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				
+					for (int i =0; i<5; i++)
+					{
+						Gecode::rel(getSpace(), (idx == i) >> (vth == vth_list[i]));
+					}*/
+					vth = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
 				}
 
 				if(comp->getPart().isTransconductancePart())
@@ -1215,6 +1391,7 @@ namespace AutomaticSizing {
 
 
 		getSpace().setHelper(rightSideEqualityLoad);
+		//getSpace().setHelper(rightSideEqualityBias);
 		Gecode::linear(getSpace(), signInputToSupplyRailPathOverLoad, voltageInputToSupplyRailPathOverLoad, Gecode::FRT_EQ, rightSideEqualityLoad);
 		Gecode::linear(getSpace(), signInputToSupplyRailPathOverBias, voltageInputToSupplyRailPathOverBias, Gecode::FRT_EQ, rightSideEqualityBias);
 
@@ -1240,6 +1417,7 @@ namespace AutomaticSizing {
 
 			float vinPlus = getCircuitInformation().getCircuitParameter().getInputPinPlus().getValue();
 			float vinMinus = getCircuitInformation().getCircuitParameter().getInputPinMinus().getValue();
+			logDebug("Vin+: " << vinPlus << " Vin-: " << vinMinus);
 			float vss = getCircuitInformation().getCircuitParameter().getGroundVoltage();
 			float vdd = getCircuitInformation().getCircuitParameter().getSupplyVoltage();
 
@@ -1317,13 +1495,13 @@ namespace AutomaticSizing {
 						Gecode::FloatVar subtrahend =expr(getSpace(), gmSecondStage * gdBiasFirstStage );
 						dom(getSpace(), subtrahend, 0, 10000);
 
-						Gecode::FloatVar factor =expr(getSpace(), (minuend - subtrahend));
-						dom(getSpace(), factor, -1000, 100000);
+						Gecode::FloatVar factor =expr(getSpace(), abs(minuend - subtrahend));
+						dom(getSpace(), factor, 0, 100000);
 
-						Gecode::FloatVar multiplication =expr(getSpace(), negPSRR * factor);
+						Gecode::FloatVar multiplication =expr(getSpace(), 2* firstStageGain * gmLoadFirstStage * gmSecondStage);
 						dom(getSpace(), multiplication, -1000, 10000000000000);
 
-						Gecode::rel(getSpace(),(2* firstStageGain * gmLoadFirstStage * gmSecondStage)  == multiplication );
+						Gecode::rel(getSpace(), multiplication / factor == negPSRR);
 						Gecode::rel(getSpace(),(firstStageGain * gmSecondStage)/ (gdSecondStage) == posPSRR);
 
 					}
@@ -1349,7 +1527,7 @@ namespace AutomaticSizing {
 					}
 					else
 					{
-//						 negative PSRR
+//						// negative PSRR
 						Gecode::rel(getSpace(), (2* firstStageGain * gmLoadFirstStage * gmSecondStage)/ ( abs(2* gmLoadFirstStage * gdBiasSecondStage - gmSecondStage * gdBiasFirstStage ))> pow(10, getCircuitInformation().getCircuitSpecification().getNegPSRR()/20));
 
 						// positive PSRR
@@ -1680,7 +1858,7 @@ namespace AutomaticSizing {
 		{
 			Partitioning::Transistor* tran = *it_tran;
 
-			tranArea[index] = Gecode::expr(getSpace(), getTransistorToWidthMap().find(*tran)* getTransistorToLengthMap().find(*tran));
+			tranArea[index] = Gecode::expr(getSpace(), getTransistorToWidthMap().find(*tran) * getTransistorToMultiplierMap().find(*tran) * getTransistorToLengthMap().find(*tran));
 			sign[index]= 1;
 			index++;
 		}
@@ -1819,27 +1997,106 @@ namespace AutomaticSizing {
 				const TechnologieSpecificationSHM & techSpecPmos = getCircuitInformation().getTechnologieSpecificationSHM(*pmosComp);
 				Gecode::FloatVal muCoxPmos = techSpecPmos.getMobilityOxideCapacityCoefficient();
 				Gecode::FloatVar widthHelperPmos(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelperPmos(getSpace(), 1, getSpace().getMultiplierUpperBound());
 				Gecode::FloatVar lengthHelperPmos(getSpace(), 1, getSpace().getLengthUpperBound());
 				channel(getSpace(), widthHelperPmos, getTransistorToWidthMap().find(*pmosComp));
+				channel(getSpace(), multiplierHelperPmos, getTransistorToMultiplierMap().find(*pmosComp));
 				channel(getSpace(), lengthHelperPmos, getTransistorToLengthMap().find(*pmosComp));
 
 				Gecode::FloatVar widthPmos = Gecode::expr(getSpace(),widthHelperPmos*mu);
+				Gecode::FloatVar multiplierPmos = Gecode::expr(getSpace(),multiplierHelperPmos);
 				Gecode::FloatVar lengthPmos = Gecode::expr(getSpace(), lengthHelperPmos*mu);
 
 				const TechnologieSpecificationSHM & techSpecNmos = getCircuitInformation().getTechnologieSpecificationSHM(*nmosComp);
 				Gecode::FloatVal muCoxNmos = techSpecNmos.getMobilityOxideCapacityCoefficient();
 				Gecode::FloatVar widthHelperNmos(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierNmos(getSpace(), 1, getSpace().getMultiplierUpperBound());
 				Gecode::FloatVar lengthHelperNmos(getSpace(), 1, getSpace().getLengthUpperBound());
 				channel(getSpace(), widthHelperNmos, getTransistorToWidthMap().find(*nmosComp));
+				channel(getSpace(), multiplierNmos, getTransistorToMultiplierMap().find(*nmosComp));
 				channel(getSpace(), lengthHelperNmos, getTransistorToLengthMap().find(*nmosComp));
 
 				Gecode::FloatVar widthNmos = Gecode::expr(getSpace(),widthHelperNmos*mu);
+				Gecode::FloatVar multiplierHelperNmosVar = Gecode::expr(getSpace(),multiplierNmos);
 				Gecode::FloatVar lengthNmos = Gecode::expr(getSpace(), lengthHelperNmos*mu);
 
 //				rel(getSpace(), 2.1 * (widthNmos/lengthNmos) >=   (widthPmos/lengthPmos) );
 //				rel(getSpace(), 1.9 *(widthNmos/lengthNmos) <=(widthPmos/lengthPmos) );
-				rel(getSpace(), muCoxNmos * (widthNmos/lengthNmos) >= 0.99 * muCoxPmos * (widthPmos/lengthPmos) );
-				rel(getSpace(), muCoxNmos * (widthNmos/lengthNmos) <= 1.01 * muCoxPmos * (widthPmos/lengthPmos) );
+				rel(getSpace(), muCoxNmos * (widthNmos*multiplierNmos/lengthNmos) >= 0.99 * muCoxPmos * (widthPmos*multiplierPmos/lengthPmos) );
+				rel(getSpace(), muCoxNmos * (widthNmos*multiplierNmos/lengthNmos) <= 1.01 * muCoxPmos * (widthPmos*multiplierPmos/lengthPmos) );
+			}
+			else
+			{
+				const TechnologieSpecificationEKV & techSpecPmos = getCircuitInformation().getTechnologieSpecificationEKV(*pmosComp);
+				//Gecode::FloatVal muCoxPmos = techSpecPmos.getMobilityOxideCapacityCoefficient();
+				Gecode::FloatVar widthHelperPmos(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelperPmos(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				Gecode::FloatVar lengthHelperPmos(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), widthHelperPmos, getTransistorToWidthMap().find(*pmosComp));
+				channel(getSpace(), multiplierHelperPmos, getTransistorToMultiplierMap().find(*pmosComp));
+				channel(getSpace(), lengthHelperPmos, getTransistorToLengthMap().find(*pmosComp));
+
+				Gecode::FloatVar widthPmos = Gecode::expr(getSpace(),widthHelperPmos*mu);
+				Gecode::FloatVar multiplierPmos = Gecode::expr(getSpace(),multiplierHelperPmos);
+				Gecode::FloatVar lengthPmos = Gecode::expr(getSpace(), lengthHelperPmos*mu);
+
+				Gecode::IntVar idxPmos(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (lengthPmos >= 5.0e-6f) >> (idxPmos == 4));
+				Gecode::rel(getSpace(), (lengthPmos < 5.0e-6f && lengthPmos >= 2.1e-6f) >> (idxPmos == 3));
+				Gecode::rel(getSpace(), (lengthPmos < 2.1e-6f && lengthPmos >= 1.2e-6f) >> (idxPmos == 2));
+				Gecode::rel(getSpace(), (lengthPmos < 1.2e-6f && lengthPmos >= 0.5e-6f) >> (idxPmos == 1));
+				Gecode::rel(getSpace(), (lengthPmos < 0.5e-6f) >> (idxPmos == 0));
+
+				Gecode::FloatVar muCoxPmos (getSpace(), 0, 0.01);
+				float muCoxPmos_list[5];
+				muCoxPmos_list[0] = techSpecPmos.getMobilityOxideCapacityCoefficient_LMAX500();
+				muCoxPmos_list[1] = techSpecPmos.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+				muCoxPmos_list[2] = techSpecPmos.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+				muCoxPmos_list[3] = techSpecPmos.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+				muCoxPmos_list[4] = techSpecPmos.getMobilityOxideCapacityCoefficient_LMIN5000();
+	   
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idxPmos == i) >> (muCoxPmos == muCoxPmos_list[i]));
+				}
+
+				const TechnologieSpecificationEKV & techSpecNmos = getCircuitInformation().getTechnologieSpecificationEKV(*nmosComp);
+				//Gecode::FloatVal muCoxNmos = techSpecNmos.getMobilityOxideCapacityCoefficient();
+				Gecode::FloatVar widthHelperNmos(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelperNmos(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				Gecode::FloatVar lengthHelperNmos(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), widthHelperNmos, getTransistorToWidthMap().find(*nmosComp));
+				channel(getSpace(), multiplierHelperNmos, getTransistorToMultiplierMap().find(*nmosComp));
+				channel(getSpace(), lengthHelperNmos, getTransistorToLengthMap().find(*nmosComp));
+
+				Gecode::FloatVar widthNmos = Gecode::expr(getSpace(),widthHelperNmos*mu);
+				Gecode::FloatVar multiplierNmos = Gecode::expr(getSpace(),multiplierHelperNmos);
+				Gecode::FloatVar lengthNmos = Gecode::expr(getSpace(), lengthHelperNmos*mu);
+
+				Gecode::IntVar idxNmos(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (lengthNmos >= 5.0e-6f) >> (idxNmos == 4));
+				Gecode::rel(getSpace(), (lengthNmos < 5.0e-6f && lengthNmos >= 2.1e-6f) >> (idxNmos == 3));
+				Gecode::rel(getSpace(), (lengthNmos < 2.1e-6f && lengthNmos >= 1.2e-6f) >> (idxNmos == 2));
+				Gecode::rel(getSpace(), (lengthNmos < 1.2e-6f && lengthNmos >= 0.5e-6f) >> (idxNmos == 1));
+				Gecode::rel(getSpace(), (lengthNmos < 0.5e-6f) >> (idxNmos == 0));
+
+				Gecode::FloatVar muCoxNmos (getSpace(), 0, 0.01);
+				float muCoxNmos_list[5];
+				muCoxNmos_list[0] = techSpecNmos.getMobilityOxideCapacityCoefficient_LMAX500();
+				muCoxNmos_list[1] = techSpecNmos.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+				muCoxNmos_list[2] = techSpecNmos.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+				muCoxNmos_list[3] = techSpecNmos.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+				muCoxNmos_list[4] = techSpecNmos.getMobilityOxideCapacityCoefficient_LMIN5000();
+	   
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idxNmos == i) >> (muCoxNmos == muCoxNmos_list[i]));
+				}
+
+//				rel(getSpace(), 2.1 * (widthNmos/lengthNmos) >=   (widthPmos/lengthPmos) );
+//				rel(getSpace(), 1.9 *(widthNmos/lengthNmos) <=(widthPmos/lengthPmos) );
+				rel(getSpace(), muCoxNmos * (widthNmos*multiplierNmos/lengthNmos) >= 0.99 * muCoxPmos * (widthPmos*multiplierPmos/lengthPmos) );
+				rel(getSpace(), muCoxNmos * (widthNmos*multiplierNmos/lengthNmos) <= 1.01 * muCoxPmos * (widthPmos*multiplierPmos/lengthPmos) );
 			}
 
 
@@ -1907,10 +2164,13 @@ namespace AutomaticSizing {
 		 assert(compFL != nullptr, "There must be one load comp being part of a current mirror connected to the first stage output");
 
 		Gecode::IntVar widthLoadFirstStage = getTransistorToWidthMap().find(*compFL);
+		Gecode::IntVar multiplierLoadFirstStage = getTransistorToMultiplierMap().find(*compFL);
 		Gecode::IntVar lengthLoadFirstStage = getTransistorToLengthMap().find(*compFL);
 		Gecode::FloatVar widthLoadFirstStageHelperVar(getSpace(),1, getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierLoadFirstStageHelperVar(getSpace(),1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthLoadFirstStageHelperVar(getSpace(),1, getSpace().getLengthUpperBound());
 		channel(getSpace(), widthLoadFirstStage, widthLoadFirstStageHelperVar);
+		channel(getSpace(), multiplierLoadFirstStage, multiplierLoadFirstStageHelperVar);
 		channel(getSpace(), lengthLoadFirstStage, lengthLoadFirstStageHelperVar);
 
 		Partitioning::TransconductancePart & secondStage = getPartitioningResult().getPrimarySecondStage();
@@ -1925,15 +2185,18 @@ namespace AutomaticSizing {
 		assert(compSecondStage != nullptr, "There should be a second stage component connect to a supply net!");
 
 		Gecode::IntVar widthSecondStage = getTransistorToWidthMap().find(*compSecondStage);
+		Gecode::IntVar multiplierSecondStage = getTransistorToMultiplierMap().find(*compSecondStage);
 		Gecode::IntVar lengthSecondStage = getTransistorToLengthMap().find(*compSecondStage);
 		Gecode::FloatVar widthSecondStageHelperVar(getSpace(),1, getSpace().getWidthUpperBound());
+		Gecode::FloatVar multiplierSecondStageHelperVar(getSpace(),1, getSpace().getMultiplierUpperBound());
 		Gecode::FloatVar lengthSecondStageHelperVar(getSpace(),1, getSpace().getLengthUpperBound());
 		channel(getSpace(), widthSecondStage, widthSecondStageHelperVar);
+		channel(getSpace(), multiplierSecondStage, multiplierSecondStageHelperVar);
 		channel(getSpace(), lengthSecondStage, lengthSecondStageHelperVar);
 
 
 
-		Gecode::FloatVar B = Gecode::expr(getSpace(),widthSecondStageHelperVar * lengthLoadFirstStageHelperVar /(lengthSecondStageHelperVar * widthLoadFirstStageHelperVar));
+		Gecode::FloatVar B = Gecode::expr(getSpace(),widthSecondStageHelperVar * multiplierSecondStageHelperVar * lengthLoadFirstStageHelperVar /(lengthSecondStageHelperVar * widthLoadFirstStageHelperVar * multiplierLoadFirstStageHelperVar));
 		dom(getSpace(), B, 0, 20);
 		return B;
 	}
@@ -2123,17 +2386,20 @@ namespace AutomaticSizing {
 
 
 		Gecode::FloatVar dominantPole = getPolesAndZeros().getDominantPole();
-		Gecode::dom(getSpace(), dominantPole, 0, 1000000000000 );
+		Gecode::dom(getSpace(), dominantPole, 0, 1e12);
 
 		for(auto  & fndp : getPolesAndZeros().getImportantNonDominantPoles())
 		{
 			Gecode::dom(getSpace(), fndp, 0, 1000000000000 );
 			Gecode::rel(getSpace(), fndp * 0.1 > dominantPole);
+			logDebug("dominant pole: " << dominantPole );
+			logDebug("Important non dominant pole: " << fndp );
 		}
 		for(auto  & fpz : getPolesAndZeros().getImportantZeros())
 		{
 			Gecode::dom(getSpace(), fpz, 0, 1000000000000 );
 			Gecode::rel(getSpace(), fpz * 0.1 > dominantPole);
+			logDebug("Important zero: " << fpz );
 		}
 
 
@@ -2220,12 +2486,18 @@ namespace AutomaticSizing {
 				Partitioning::Part & biasPart = **loadPart->getBiasParts().begin();
 				Partitioning::Component & biasComp = **getPartitioningResult().getBelongingComponents(biasPart).begin();
 
+
 				if(loadPart->getBiasParts().size() == 1 && getPartitioningResult().getBelongingComponents(biasPart).size() == 1
 						&& biasComp.getArray().getStructureName().toStr() == "MosfetDiodeArray" )
 				{
 					//Source net of bias Comp and Diff pair of first stage must be equals
 
 					Partitioning::Component & compFT = **getPartitioningResult().getBelongingComponents(firstStage).begin();
+					float u = getSpace().getScalingFactorMUM();
+					Gecode::IntVar length = getTransistorToLengthMap().find(compFT);
+					Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+					channel(getSpace(), length, lengthHelper);
+					Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
 
 					if(compFT.getArray().findNet(StructRec::StructurePinType("MosfetNormalArray", "Source")).getIdentifier()
 							== biasComp.getArray().findNet(StructRec::StructurePinType("MosfetDiodeArray", "Source")).getIdentifier())
@@ -2259,7 +2531,31 @@ namespace AutomaticSizing {
 							}
 						}
 
-						float vthFT = getCircuitInformation().getTechnologieSpecificationSHM(compFT).getThresholdVoltage();
+						Gecode::FloatVar vthFT (getSpace(), -0.5, 0.5);
+						/* */
+						Gecode::IntVar idx(getSpace(), 0, 4);
+						Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+						Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));
+						Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+						Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+						Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+				
+						float vth_list[5];
+						vth_list[0] = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMAX500();
+						vth_list[1] = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMIN500_LMAX1200();
+						vth_list[2] = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMIN1200_LMAX2100();
+						vth_list[3] = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMIN2100_LMAX5000();
+						vth_list[4] = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMIN5000();
+
+						for (int i =0; i<5; i++)
+						{
+							Gecode::rel(getSpace(), (idx == i) >> (vthFT == vth_list[i]));
+						}
+						
+						
+
+						//vthFT = getCircuitInformation().getTechnologieSpecificationSHM(compFT).getThresholdVoltage();
+						//vthFT = getCircuitInformation().getTechnologieSpecificationEKV(compFT).getThresholdVoltage_LMIN1200_LMAX2100();
 						Gecode::FloatVar vgsCompFT = computeEdgeVoltage(*gateSourceEdgeCompFT);
 						Gecode::FloatVar vgsBiasComp = computeEdgeVoltage(*gateSourceEdgeBiasComp);
 						Gecode::FloatVar vgsCascodePairComp = computeEdgeVoltage(*gateSourceEdgeCascodePairComp);
@@ -2790,6 +3086,19 @@ namespace AutomaticSizing {
 		std::vector<Partitioning::Component *> inputToSupplyRailPathOverLoad = computeInputToSupplyRailPathOverLoad(feedbackStage);
 
 		Partitioning::Component & compCMFB_T = feedbackStage.findComponentNotConnectedToVref(getCircuitInformation().getCircuitParameter(), getPartitioningResult());
+		Gecode::IntVar widthCMFB_T = getTransistorToWidthMap().find(compCMFB_T);
+		Gecode::IntVar multiplierCMFB_T = getTransistorToMultiplierMap().find(compCMFB_T);
+		Gecode::FloatVar widthHelperCMFB_T(getSpace(), 1, getSpace().getWidthUpperBound());
+		channel(getSpace(), widthCMFB_T, widthHelperCMFB_T);
+		Gecode::FloatVar multiplierHelperCMFB_T(getSpace(), 1, getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplierCMFB_T, multiplierHelperCMFB_T);
+		Gecode::FloatVar normedWidthCMFB_T = Gecode::expr(getSpace(), widthHelperCMFB_T * multiplierHelperCMFB_T * u );
+
+		Gecode::IntVar lengthCMFB_T = getTransistorToLengthMap().find(compCMFB_T);
+		Gecode::FloatVar lengthHelperCMFB_T(getSpace(), 1, getSpace().getLengthUpperBound());
+		channel(getSpace(), lengthCMFB_T, lengthHelperCMFB_T);
+		Gecode::FloatVar normedLengthCMFB_T = Gecode::expr(getSpace(), lengthHelperCMFB_T * u );
+
 		float vthFeedbackStage;
 		if(getTransistorModel() =="SHM")
 		{
@@ -2799,7 +3108,27 @@ namespace AutomaticSizing {
 		else
 		{
 				const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(compCMFB_T);
-				vthFeedbackStage = techSpec.getThresholdVoltage();
+
+				/* 
+				Gecode::IntVar idx(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (normedLengthCMFB_T >= 5.0e-6f) >> (idx == 4));
+				Gecode::rel(getSpace(), (normedLengthCMFB_T < 5.0e-6f && normedLengthCMFB_T >= 2.1e-6f) >> (idx == 3));	
+				Gecode::rel(getSpace(), (normedLengthCMFB_T < 2.1e-6f && normedLengthCMFB_T >= 1.2e-6f) >> (idx == 2));
+				Gecode::rel(getSpace(), (normedLengthCMFB_T < 1.2e-6f && normedLengthCMFB_T >= 0.5e-6f) >> (idx == 1));
+				Gecode::rel(getSpace(), (normedLengthCMFB_T < 0.5e-6f) >> (idx == 0));
+				
+				float vth_list[5];
+				vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+				vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+				vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+				vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+				vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idx == i) >> (vthFeedbackStage == vth_list[i]));
+				}*/
+				vthFeedbackStage = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
 		}
 
 		Gecode::FloatValArgs signInputToSupplyRailPathOverLoad(inputToSupplyRailPathOverLoad.size() -1);
@@ -2811,28 +3140,54 @@ namespace AutomaticSizing {
 			{
 
 				Gecode::FloatVar drainSourceCurrent = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(*comp));
-				float muCox;
-
-				if(getTransistorModel() =="SHM")
-				{
-					const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(*comp);
-					muCox = techSpec.getMobilityOxideCapacityCoefficient();
-				}
-				else
-				{
-					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-					muCox = techSpec.getMobilityOxideCapacityCoefficient();
-				}
+				Gecode::FloatVar muCox (getSpace(), 0, 0.01);	
 
 				Gecode::IntVar width = getTransistorToWidthMap().find(*comp);
 				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 				channel(getSpace(), width, widthHelper);
-				Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u );
+				Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(*comp);
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				channel(getSpace(), multiplier, multiplierHelper);
+				Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u );
 
 				Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
 				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
 				channel(getSpace(), length, lengthHelper);
 				Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+
+				logDebug("width domain: " << normedWidth << " length domain: " << normedLength);
+
+				if(getTransistorModel() =="SHM")
+				{
+					const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(*comp);
+					Gecode::rel(getSpace(), muCox == techSpec.getMobilityOxideCapacityCoefficient());
+				}
+				else
+				{
+					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
+					/* */
+					Gecode::IntVar idx(getSpace(), 0, 4);
+					Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+					Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));	
+					Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+					Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+					Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+
+					float muCox_list[5];
+					muCox_list[0] = techSpec.getMobilityOxideCapacityCoefficient_LMAX500();
+					muCox_list[1] = techSpec.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+					muCox_list[2] = techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+					muCox_list[3] = techSpec.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+					muCox_list[4] = techSpec.getMobilityOxideCapacityCoefficient_LMIN5000();
+
+					for (int i =0; i<5; i++)
+					{
+						Gecode::rel(getSpace(), (idx == i) >> (muCox == muCox_list[i]));
+					}
+					
+					//Gecode::rel(getSpace(), muCox == techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100());
+					
+				}
 				Gecode::FloatVar lengthWidthRatio = Gecode::expr(getSpace(),normedLength* 2/(muCox * normedWidth));
 				dom(getSpace(), lengthWidthRatio, 0, 1000000000000000000000000000);
 
@@ -2853,28 +3208,54 @@ namespace AutomaticSizing {
 		for(auto & comp : inputToSupplyRailPathOverBias)
 		{
 			Gecode::FloatVar drainSourceCurrent = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(*comp));
-			float muCox;
-
-			if(getTransistorModel() =="SHM")
-			{
-				const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(*comp);
-				muCox = techSpec.getMobilityOxideCapacityCoefficient();
-			}
-			else
-			{
-				const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-				muCox = techSpec.getMobilityOxideCapacityCoefficient();
-			}
+			
 
 			Gecode::IntVar width = getTransistorToWidthMap().find(*comp);
 			Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 			channel(getSpace(), width, widthHelper);
-			Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u );
+			Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(*comp);
+			Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+			channel(getSpace(), multiplier, multiplierHelper);
+			Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u );
 
 			Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
 			Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
 			channel(getSpace(), length, lengthHelper);
 			Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+
+			Gecode::FloatVar muCox (getSpace(), 0, 0.01);
+
+			if(getTransistorModel() =="SHM")
+			{
+				const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(*comp);
+				Gecode::rel(getSpace(), muCox == techSpec.getMobilityOxideCapacityCoefficient());
+			}
+			else
+			{
+				const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
+				/* */
+				Gecode::IntVar idx(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+				Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));	
+				Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+				Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+				Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+
+				float muCox_list[5];
+				muCox_list[0] = techSpec.getMobilityOxideCapacityCoefficient_LMAX500();
+				muCox_list[1] = techSpec.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+				muCox_list[2] = techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+				muCox_list[3] = techSpec.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+				muCox_list[4] = techSpec.getMobilityOxideCapacityCoefficient_LMIN5000();
+
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idx == i) >> (muCox == muCox_list[i]));
+				}
+				//Gecode::rel(getSpace(), muCox == techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100());
+			}
+
+
 			Gecode::FloatVar lengthWidthRatio = Gecode::expr(getSpace(),normedLength* 2/(muCox * normedWidth));
 			dom(getSpace(), lengthWidthRatio, 0, 1000000000000000000000000000);
 
@@ -2903,6 +3284,19 @@ namespace AutomaticSizing {
 			float constantInputToSupplyRailPathOverLoad = 0;
 			for(auto & comp : inputToSupplyRailPathOverLoad)
 			{
+				Gecode::IntVar width = getTransistorToWidthMap().find(*comp);
+				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+				channel(getSpace(), width, widthHelper);
+				Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(*comp);
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				channel(getSpace(), multiplier, multiplierHelper);
+				Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u );
+
+				Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), length, lengthHelper);
+				Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+
 				float vth;
 				if(getTransistorModel() =="SHM")
 				{
@@ -2912,8 +3306,30 @@ namespace AutomaticSizing {
 				else
 				{
 					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-					vth = techSpec.getThresholdVoltage();
+					/* 
+					Gecode::IntVar idx(getSpace(), 0, 4);
+					Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+					Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));	
+					Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+					Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+					Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+	   
+					Gecode::FloatVar vthVar (getSpace(), -0.5, 0.5);
+				
+					float vth_list[5];
+					vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+					vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+					vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+					vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+					vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				
+					for (int i =0; i<5; i++)
+					{
+						Gecode::rel(getSpace(), (idx == i) >> (vthV == vth_list[i]));
+					}*/
+					vth = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
 				}
+				
 
 				if(comp->getPart().isTransconductancePart())
 				{
@@ -2943,6 +3359,19 @@ namespace AutomaticSizing {
 			float constantInputToSupplyRailPathOverLoad = 0;
 			for(auto & comp : inputToSupplyRailPathOverLoad)
 			{
+				Gecode::IntVar width = getTransistorToWidthMap().find(*comp);
+				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+				channel(getSpace(), width, widthHelper);
+				Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(*comp);
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				channel(getSpace(), multiplier, multiplierHelper);
+				Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u );
+
+				Gecode::IntVar length = getTransistorToLengthMap().find(*comp);
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+				channel(getSpace(), length, lengthHelper);
+				Gecode::FloatVar normedLength = Gecode::expr(getSpace(), lengthHelper * u );
+
 				float vth;
 				if(getTransistorModel() =="SHM")
 				{
@@ -2952,7 +3381,30 @@ namespace AutomaticSizing {
 				else
 				{
 					const TechnologieSpecificationEKV & techSpec= getCircuitInformation().getTechnologieSpecificationEKV(*comp);
-					vth = techSpec.getThresholdVoltage();
+					/* 
+					Gecode::IntVar idx(getSpace(), 0, 4);
+					Gecode::rel(getSpace(), (normedLength >= 5.0e-6f) >> (idx == 4));
+					Gecode::rel(getSpace(), (normedLength < 5.0e-6f && normedLength >= 2.1e-6f) >> (idx == 3));	
+					Gecode::rel(getSpace(), (normedLength < 2.1e-6f && normedLength >= 1.2e-6f) >> (idx == 2));
+					Gecode::rel(getSpace(), (normedLength < 1.2e-6f && normedLength >= 0.5e-6f) >> (idx == 1));
+					Gecode::rel(getSpace(), (normedLength < 0.5e-6f) >> (idx == 0));
+	   
+					Gecode::FloatVar vthVar (getSpace(), -0.5, 0.5);
+				
+					float vth_list[5];
+					vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+					vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+					vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+					vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+					vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+
+					for (int i =0; i<5; i++)
+					{
+						Gecode::rel(getSpace(), (idx == i) >> (vthVar == vth_list[i]));
+					}
+				
+					vth = vthVar.min();*/
+					vth = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
 				}
 
 				if(comp->getPart().isTransconductancePart())
@@ -3245,7 +3697,7 @@ namespace AutomaticSizing {
 				dom(getSpace(), Rout1, 0, 100000000000000000000);
 
 				Gecode::rel(getSpace(), dominantPole * (2* 3.14159265 * Rout1 * gainSecondStage * normedCompCapValue) == 1);
-
+				
 			}
 			else if(compensationCapacityConnectedBetween(getPartitioningResult().getPrimarySecondStage(),getPartitioningResult().getThirdStage() ))
 			{
@@ -3291,6 +3743,7 @@ namespace AutomaticSizing {
 			Gecode::rel(getSpace(), dominantPole * (2* 3.14159265 * Rout1  *Cout) == 1);
 
 		}
+		logDebug("Dominant pole: " << dominantPole);
 		return dominantPole;
 	}
 
@@ -4165,10 +4618,12 @@ namespace AutomaticSizing {
 
 	}
 
-	Gecode::FloatVar CircuitSpecificationsConstraints::computeTransconductance(Partitioning::Component& transistor) const
+	Gecode::FloatVar CircuitSpecificationsConstraints::computeTransconductance(Partitioning::Component& transistor) 
 	{
 		Gecode::FloatVal mu = getSpace().getScalingFactorMUM();
 		Gecode::FloatVar ids = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(transistor));
+
+
 		if(getTransistorModel()  == "SHM")
 		{
 			const TechnologieSpecificationSHM & techSpec = getCircuitInformation().getTechnologieSpecificationSHM(transistor);
@@ -4189,35 +4644,219 @@ namespace AutomaticSizing {
 				Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
 
 				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
 				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
 
 				channel(getSpace(), widthHelper, getTransistorToWidthMap().find(transistor));
+				channel(getSpace(), multiplierHelper, getTransistorToMultiplierMap().find(transistor));
 				channel(getSpace(), lengthHelper, getTransistorToLengthMap().find(transistor));
 
 				Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelper*mu);
+				Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelper);
 				Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelper*mu);
 
+				logDebug("width: " << width << " multiplier: " << multiplier << " length: " << length);
 
-				return Gecode::expr(getSpace(), sqrt(2* muCox * (width/length) * abs(ids)));
+
+				return Gecode::expr(getSpace(), sqrt(2* muCox * (width*multiplier/length) * abs(ids)));
 			}
 		}
 		else
 		{
 			//Change code suited for ekv model
 			const TechnologieSpecificationEKV & techSpec = getCircuitInformation().getTechnologieSpecificationEKV(transistor);
+			Gecode::FloatVal Vt = techSpec.getThermalVoltage();
 
-			Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
+				/*Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
+				Gecode::FloatVal vth = techSpec.getThresholdVoltage();
+				Gecode::FloatVal n = techSpec.getSlopeFactor();
+				Gecode::FloatVal Vt = techSpec.getThermalVoltage();
+				Gecode::FloatVal lamda = techSpec.getChannelLengthCoefficient();
+				Gecode::FloatVal theta = techSpec.getMobilityReductionCoefficient();
+				Gecode::FloatVal eta = techSpec.getDIBLCoefficient();*/
 
-			Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
-			Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+			   	//Find the gate-source and drain-source edge of the transistor
 
-			channel(getSpace(), widthHelper, getTransistorToWidthMap().find(transistor));
-			channel(getSpace(), lengthHelper, getTransistorToLengthMap().find(transistor));
+				Edge * drainSourceEdge = NULL;
+			   	Edge * gateSourceEdge = NULL;
+			   	std::vector<Edge*> edges = getGraph().findToComponentBelongingEdges(transistor);
+			   	for(std::vector<Edge*>::const_iterator it = edges.begin(); it != edges.end(); it++)
+			   	{
+				   	Edge* edge = *it;
+				   	if(edge->isDrainSourceEdge())
+				   	{
+						   drainSourceEdge = edge;
+				   	}
+				   	else if (edge->isGateSourceEdge())
+				   	{
+						   gateSourceEdge = edge;
+				   	}
+			   	}
+			   	assert(drainSourceEdge != NULL, "No drainSourceEdge found!");
+			   	if(gateSourceEdge == NULL)
+			   	{
+				   gateSourceEdge = drainSourceEdge;
+			   	}
+			   	Gecode::FloatVar vgs = computeEdgeVoltage(*gateSourceEdge);
+				Gecode::FloatVar vds = computeEdgeVoltage(*drainSourceEdge);
 
-			Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelper*mu);
-			Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelper*mu);
-			return Gecode::expr(getSpace(), sqrt(2* muCox * (width/length) * abs(ids) ));
-		}
+				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
+
+				channel(getSpace(), widthHelper, getTransistorToWidthMap().find(transistor));
+				channel(getSpace(), multiplierHelper, getTransistorToMultiplierMap().find(transistor));
+				channel(getSpace(), lengthHelper, getTransistorToLengthMap().find(transistor));
+
+				Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelper*mu);
+				Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelper);
+				Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelper*mu);
+
+				logDebug("width: " << width << " multiplier: " << multiplier << " length: " << length);
+
+				Gecode::IntVar idx(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (length >= 5e-6f) >> (idx == 4));
+				Gecode::rel(getSpace(), (length < 5e-6f && length >= 2.1e-6f) >> (idx == 3));
+				Gecode::rel(getSpace(), (length < 2.1e-6f && length >= 1.2e-6f) >> (idx == 2));
+				Gecode::rel(getSpace(), (length < 1.2e-6f && length >= 0.5e-6f) >> (idx == 1));
+				Gecode::rel(getSpace(), (length < 0.5e-6f) >> (idx == 0));
+	   
+				Gecode::FloatVar vth (getSpace(), -0.5, 0.5);
+				Gecode::FloatVar muCox (getSpace(), 0, 0.01);
+				Gecode::FloatVar n (getSpace(), 0, 2);
+				Gecode::FloatVar lamda (getSpace(), 0, 1);
+				Gecode::FloatVar theta (getSpace(), 0, 1);
+				Gecode::FloatVar eta (getSpace(), 0, 1);
+	   
+				float muCox_list[5], vth_list[5], n_list[5], lamda_list[5], theta_list[5], eta_list[5];
+				vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+				vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+				vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+				vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+				vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				muCox_list[0] = techSpec.getMobilityOxideCapacityCoefficient_LMAX500();
+				muCox_list[1] = techSpec.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+				muCox_list[2] = techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+				muCox_list[3] = techSpec.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+				muCox_list[4] = techSpec.getMobilityOxideCapacityCoefficient_LMIN5000();
+				n_list[0] = techSpec.getSlopeFactor_LMAX500();
+				n_list[1] = techSpec.getSlopeFactor_LMIN500_LMAX1200();
+				n_list[2] = techSpec.getSlopeFactor_LMIN1200_LMAX2100();
+				n_list[3] = techSpec.getSlopeFactor_LMIN2100_LMAX5000();
+				n_list[4] = techSpec.getSlopeFactor_LMIN5000();
+				lamda_list[0] = techSpec.getChannelLengthCoefficient_LMAX500();
+				lamda_list[1] = techSpec.getChannelLengthCoefficient_LMIN500_LMAX1200();
+				lamda_list[2] = techSpec.getChannelLengthCoefficient_LMIN1200_LMAX2100();
+				lamda_list[3] = techSpec.getChannelLengthCoefficient_LMIN2100_LMAX5000();
+				lamda_list[4] = techSpec.getChannelLengthCoefficient_LMIN5000();
+				theta_list[0] = techSpec.getMobilityReductionCoefficient_LMAX500();
+				theta_list[1] = techSpec.getMobilityReductionCoefficient_LMIN500_LMAX1200();
+				theta_list[2] = techSpec.getMobilityReductionCoefficient_LMIN1200_LMAX2100();
+				theta_list[3] = techSpec.getMobilityReductionCoefficient_LMIN2100_LMAX5000();
+				theta_list[4] = techSpec.getMobilityReductionCoefficient_LMIN5000();
+				eta_list[0] = techSpec.getDIBLCoefficient_LMAX500();
+				eta_list[1] = techSpec.getDIBLCoefficient_LMIN500_LMAX1200();
+				eta_list[2] = techSpec.getDIBLCoefficient_LMIN1200_LMAX2100();
+				eta_list[3] = techSpec.getDIBLCoefficient_LMIN2100_LMAX5000();
+				eta_list[4] = techSpec.getDIBLCoefficient_LMIN5000();
+
+	   
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idx == i) >> (vth == vth_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (muCox == muCox_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (n == n_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (lamda == lamda_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (theta == theta_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (eta == eta_list[i]));
+				}
+
+				if(getEKVVersion() == 1)
+				{
+					Gecode::FloatVar vP (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp(vP * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+					Gecode::FloatVar term (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), term == termF - termR);
+					Gecode::FloatVar factor (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), factor == 2 * muCox * (width * multiplier / length) * Vt);
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar result (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result == factor * term * scaleLamda);
+					return result;
+				}
+				else if(getEKVVersion() == 2)
+				{
+					Gecode::FloatVar vP (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp((vP) * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+					Gecode::FloatVar term (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), term == termF - termR);
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar scaleTheta (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleTheta == 1 + theta * abs(vP));
+					Gecode::FloatVar result (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result * scaleTheta  == 2 * muCox * (width * multiplier / length) * Vt * (term) * scaleLamda);
+					return result;
+				}
+				else
+				{
+					Gecode::FloatVar etaTerm (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), etaTerm == eta * abs(vds));
+					Gecode::FloatVar vth_eff (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), vth_eff == abs(vth) - etaTerm);
+					Gecode::FloatVar vP (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth_eff)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp((vP) * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+					Gecode::FloatVar term (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), term == termF - termR);
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar scaleTheta (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleTheta == 1 + theta * abs(vP));
+					Gecode::FloatVar result (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result * scaleTheta  == 2 * muCox * (width * multiplier / length) * Vt * (termF) * scaleLamda);
+					return result;
+				}
+			}
 	}
 
 	 Gecode::FloatVar CircuitSpecificationsConstraints::computeOutputResistanceFirstStage()
@@ -4330,6 +4969,8 @@ namespace AutomaticSizing {
 
 	 Gecode::FloatVar CircuitSpecificationsConstraints::computeOutputConductance(Partitioning::Component& transistor)
 	 {
+		Gecode::FloatVal mu = getSpace().getScalingFactorMUM();
+				
 		 Gecode::FloatVar ids = getSpace().createFloatCurrent(getTransistorToCurrentMap().find(transistor));
 		 if(getTransistorModel() == "SHM")
 		 {
@@ -4346,6 +4987,10 @@ namespace AutomaticSizing {
 				 Gecode::IntVar width = getTransistorToWidthMap().find(transistor);
 				 Gecode::FloatVar widthHelperVar(getSpace(), 1, getSpace().getWidthUpperBound());
 				 channel(getSpace(), widthHelperVar, width);
+
+				 Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(transistor);
+				 Gecode::FloatVar multiplierHelperVar(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				 channel(getSpace(), multiplierHelperVar, multiplier);
 
 				Edge * drainSourceEdge = NULL;
 				Edge * gateSourceEdge = NULL;
@@ -4369,7 +5014,8 @@ namespace AutomaticSizing {
 				}
 				Gecode::FloatVar vgs = computeEdgeVoltage(*gateSourceEdge);
 
-				return Gecode::expr(getSpace(), muCox * widthHelperVar/lengthHelperVar * abs((vgs -vth)));
+
+				return Gecode::expr(getSpace(), muCox * widthHelperVar * multiplierHelperVar/lengthHelperVar * abs((vgs -vth)));
 			}
 			else
 			{
@@ -4394,28 +5040,206 @@ namespace AutomaticSizing {
 		 }
 		 else
 		 { //Change Code suitable for EKV model
-			 const TechnologieSpecificationEKV & techSpec = getCircuitInformation().getTechnologieSpecificationEKV(transistor);
+			const TechnologieSpecificationEKV & techSpec = getCircuitInformation().getTechnologieSpecificationEKV(transistor);
 
-		 	//Needed for a varying lamda
-		 	 Gecode::FloatVal earlyVoltage = techSpec.getEarlyVoltage();
-		 	 Gecode::IntVar length = getTransistorToLengthMap().find(transistor);
-		 	 Gecode::FloatVar lengthHelperVar(getSpace(), 1, getSpace().getLengthUpperBound());
-		 	 channel(getSpace(), lengthHelperVar, length);
-		 	 Gecode::FloatVar lamda(getSpace(), 0.01, 0.9);
-		 	 //Varying lamda
-		 	 // Gecode::rel(getSpace(), lamda* earlyVoltage * lengthHelperVar == 1);
+		 	Gecode::FloatVal Vt = techSpec.getThermalVoltage();
+			
+				/*Gecode::FloatVal lamda = techSpec.getChannelLengthCoefficient();
+				Gecode::FloatVal muCox = techSpec.getMobilityOxideCapacityCoefficient();
+				Gecode::FloatVal vth = techSpec.getThresholdVoltage();
+				Gecode::FloatVal n = techSpec.getSlopeFactor();
+				Gecode::FloatVal Vt = techSpec.getThermalVoltage();
+				Gecode::FloatVal theta = techSpec.getMobilityReductionCoefficient();
+				Gecode::FloatVal eta = techSpec.getDIBLCoefficient();*/
 
-		 	 //Constant lamda
-		 	 Gecode::rel(getSpace(), lamda == techSpec.getChannelLengthCoefficient());
-		 	 if(transistor.getArray().getTechType().isN())
-		 	 {
-		 		 return Gecode::expr(getSpace(), lamda  *ids);
-		 	 }
-		 	 else
-		 	 {
-		 		 return Gecode::expr(getSpace(), -1* lamda * ids);
-		 	 }
+				Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+				Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+				Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
 
+				channel(getSpace(), widthHelper, getTransistorToWidthMap().find(transistor));
+				channel(getSpace(), multiplierHelper, getTransistorToMultiplierMap().find(transistor));
+				channel(getSpace(), lengthHelper, getTransistorToLengthMap().find(transistor));
+
+				Gecode::FloatVar width = Gecode::expr(getSpace(),widthHelper*mu);
+				Gecode::FloatVar multiplier = Gecode::expr(getSpace(),multiplierHelper);
+				Gecode::FloatVar length = Gecode::expr(getSpace(), lengthHelper*mu);
+
+				 Edge * drainSourceEdge = NULL;
+				Edge * gateSourceEdge = NULL;
+				std::vector<Edge*> edges = getGraph().findToComponentBelongingEdges(transistor);
+				for(std::vector<Edge*>::const_iterator it = edges.begin(); it != edges.end(); it++)
+				{
+					Edge* edge = *it;
+					if(edge->isDrainSourceEdge())
+					{
+						drainSourceEdge = edge;
+					}
+					else if (edge->isGateSourceEdge())
+					{
+							gateSourceEdge = edge;
+					}
+				}
+				assert(drainSourceEdge != NULL, "No drainSourceEdge found!");
+				if(gateSourceEdge == NULL)
+				{
+					gateSourceEdge = drainSourceEdge;
+				}
+				Gecode::FloatVar vgs = computeEdgeVoltage(*gateSourceEdge);
+				Gecode::FloatVar vds = computeEdgeVoltage(*drainSourceEdge);
+
+				Gecode::IntVar idx(getSpace(), 0, 4);
+				Gecode::rel(getSpace(), (length >= 5e-6f) >> (idx == 4));
+				Gecode::rel(getSpace(), (length < 5e-6f && length >= 2.1e-6f) >> (idx == 3));
+				Gecode::rel(getSpace(), (length < 2.1e-6f && length >= 1.2e-6f) >> (idx == 2));
+				Gecode::rel(getSpace(), (length < 1.2e-6f && length >= 0.5e-6f) >> (idx == 1));
+				Gecode::rel(getSpace(), (length < 0.5e-6f) >> (idx == 0));
+	   
+				Gecode::FloatVar vth (getSpace(), -0.5, 0.5);
+				Gecode::FloatVar muCox (getSpace(), 0, 0.01);
+				Gecode::FloatVar n (getSpace(), 0, 2);
+				Gecode::FloatVar lamda (getSpace(), 0, 1);
+				Gecode::FloatVar theta (getSpace(), 0, 1);
+				Gecode::FloatVar eta (getSpace(), 0, 1);
+	   
+				float muCox_list[5], vth_list[5], n_list[5], lamda_list[5], theta_list[5], eta_list[5];
+				vth_list[0] = techSpec.getThresholdVoltage_LMAX500();
+				vth_list[1] = techSpec.getThresholdVoltage_LMIN500_LMAX1200();
+				vth_list[2] = techSpec.getThresholdVoltage_LMIN1200_LMAX2100();
+				vth_list[3] = techSpec.getThresholdVoltage_LMIN2100_LMAX5000();
+				vth_list[4] = techSpec.getThresholdVoltage_LMIN5000();
+				muCox_list[0] = techSpec.getMobilityOxideCapacityCoefficient_LMAX500();
+				muCox_list[1] = techSpec.getMobilityOxideCapacityCoefficient_LMIN500_LMAX1200();
+				muCox_list[2] = techSpec.getMobilityOxideCapacityCoefficient_LMIN1200_LMAX2100();
+				muCox_list[3] = techSpec.getMobilityOxideCapacityCoefficient_LMIN2100_LMAX5000();
+				muCox_list[4] = techSpec.getMobilityOxideCapacityCoefficient_LMIN5000();
+				n_list[0] = techSpec.getSlopeFactor_LMAX500();
+				n_list[1] = techSpec.getSlopeFactor_LMIN500_LMAX1200();
+				n_list[2] = techSpec.getSlopeFactor_LMIN1200_LMAX2100();
+				n_list[3] = techSpec.getSlopeFactor_LMIN2100_LMAX5000();
+				n_list[4] = techSpec.getSlopeFactor_LMIN5000();
+				lamda_list[0] = techSpec.getChannelLengthCoefficient_LMAX500();
+				lamda_list[1] = techSpec.getChannelLengthCoefficient_LMIN500_LMAX1200();
+				lamda_list[2] = techSpec.getChannelLengthCoefficient_LMIN1200_LMAX2100();
+				lamda_list[3] = techSpec.getChannelLengthCoefficient_LMIN2100_LMAX5000();
+				lamda_list[4] = techSpec.getChannelLengthCoefficient_LMIN5000();
+				theta_list[0] = techSpec.getMobilityReductionCoefficient_LMAX500();
+				theta_list[1] = techSpec.getMobilityReductionCoefficient_LMIN500_LMAX1200();
+				theta_list[2] = techSpec.getMobilityReductionCoefficient_LMIN1200_LMAX2100();
+				theta_list[3] = techSpec.getMobilityReductionCoefficient_LMIN2100_LMAX5000();
+				theta_list[4] = techSpec.getMobilityReductionCoefficient_LMIN5000();
+				eta_list[0] = techSpec.getDIBLCoefficient_LMAX500();
+				eta_list[1] = techSpec.getDIBLCoefficient_LMIN500_LMAX1200();
+				eta_list[2] = techSpec.getDIBLCoefficient_LMIN1200_LMAX2100();
+				eta_list[3] = techSpec.getDIBLCoefficient_LMIN2100_LMAX5000();
+				eta_list[4] = techSpec.getDIBLCoefficient_LMIN5000();
+
+	   
+				for (int i =0; i<5; i++)
+				{
+					Gecode::rel(getSpace(), (idx == i) >> (vth == vth_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (muCox == muCox_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (n == n_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (lamda == lamda_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (theta == theta_list[i]));
+					Gecode::rel(getSpace(), (idx == i) >> (eta == eta_list[i]));
+				}
+
+
+				if(getEKVVersion() == 1)
+				{
+					Gecode::FloatVar vP (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp(vP * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar result1 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result1 == lamda * abs(ids));
+					Gecode::FloatVar result2 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result2 == 2 * muCox * (width*multiplier/length) * Vt * n * termR * scaleLamda);
+					Gecode::FloatVar result (getSpace(), 0, 2);
+					Gecode::rel(getSpace(), result == (result1 + result2));
+					return result;
+				}
+				else if(getEKVVersion() == 2)
+				{
+					Gecode::FloatVar vP (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp((vP) * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar scaleTheta (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleTheta == 1 + theta * abs(vP));
+
+					Gecode::FloatVar result1 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result1 * scaleTheta == lamda * abs(ids));
+					Gecode::FloatVar result2 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result2 * scaleTheta == 2 * muCox * (width*multiplier/length) * Vt * n * termR * scaleLamda);
+					Gecode::FloatVar result (getSpace(), 0, 2);
+					Gecode::rel(getSpace(), result == (result1 + result2));
+					return result;
+				}
+				else
+				{
+					Gecode::FloatVar etaTerm (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), etaTerm == eta * abs(vds));
+					Gecode::FloatVar vth_eff (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), vth_eff == abs(vth) - etaTerm);
+					Gecode::FloatVar vP (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), vP == (abs(vgs) - abs(vth)) / n);
+					Gecode::FloatVar expF (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expF == exp((vP) * (0.5 / Vt)));
+					Gecode::FloatVar expR (getSpace(), 0, 1e6);
+					Gecode::rel(getSpace(), expR == exp((vP - abs(vds)) * (0.5 / Vt)));
+					Gecode::FloatVar lnF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnF == log(1 + expF));
+					Gecode::FloatVar lnR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), lnR == log(1 + expR));
+
+					Gecode::FloatVar termF (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termF * (1 + expF) == lnF * expF);
+					Gecode::FloatVar termR (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), termR * (1 + expR) == lnR * expR);
+					Gecode::FloatVar scaleLamda (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleLamda == 1 + lamda * abs(vds));
+					Gecode::FloatVar scaleTheta (getSpace(), 1, 2);
+					Gecode::rel(getSpace(), scaleTheta == 1 + theta * abs(vP));
+
+					Gecode::FloatVar factor (getSpace(), 0, 10);
+					Gecode::rel(getSpace(), factor * scaleTheta == 2 * muCox * (width*multiplier/length) * Vt * lnF * scaleLamda);
+
+					Gecode::FloatVar result1 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result1 == lamda * factor * n * Vt * lnF);
+					Gecode::FloatVar result2 (getSpace(), 0, 1);
+					Gecode::rel(getSpace(), result2 == factor * scaleLamda * eta);
+					Gecode::FloatVar result (getSpace(), 0, 2);
+					Gecode::rel(getSpace(), result == result1 + result2);
+					return result;
+				}
 		 }
 	 }
 
@@ -4559,18 +5383,21 @@ namespace AutomaticSizing {
 		}
 
 		 Gecode::IntVar width = getTransistorToWidthMap().find(component);
+		 Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(component);
 		 Gecode::IntVar length = getTransistorToLengthMap().find(component);
 
 		 Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
+		 Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
 		 Gecode::FloatVar lengthHelper(getSpace(), 1, getSpace().getLengthUpperBound());
 
 		 channel(getSpace(), width, widthHelper);
+		 channel(getSpace(), multiplier, multiplierHelper);
 		 channel(getSpace(), length, lengthHelper);
 
-		 Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u);
+		 Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u);
 
 
-		 return Gecode::expr(getSpace(), 0.66666667 * lengthHelper * u* widthHelper * u * gateOxideCapacity + normedWidth * overlapCapacity);
+		 return Gecode::expr(getSpace(), 0.66666667 * lengthHelper * u* widthHelper * multiplierHelper* u * gateOxideCapacity + normedWidth * overlapCapacity);
 
 	 }
 
@@ -4597,7 +5424,10 @@ namespace AutomaticSizing {
 	 	 Gecode::IntVar width = getTransistorToWidthMap().find(component);
 	 	 Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 	 	 channel(getSpace(), width, widthHelper);
-	 	 Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u);
+		 Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(component);
+		 Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+		 channel(getSpace(), multiplier, multiplierHelper);
+	 	 Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u);
 
 
 	 	return Gecode::expr(getSpace(), normedWidth * lateralDiffusionLength * gateOxideCapacity);
@@ -4627,7 +5457,10 @@ namespace AutomaticSizing {
 		Gecode::IntVar width = getTransistorToWidthMap().find(component);
 		Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 		channel(getSpace(), width, widthHelper);
-		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u);
+		Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(component);
+		Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplier, multiplierHelper);
+		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u);
 
 
 		return Gecode::expr(getSpace(), gateOxideCapacity* lateralDiffusionLength* normedWidth);
@@ -4670,7 +5503,10 @@ namespace AutomaticSizing {
 		Gecode::IntVar width = getTransistorToWidthMap().find(component);
 		Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 		channel(getSpace(), width, widthHelper);
-		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u);
+		Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(component);
+		Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplier, multiplierHelper);
+		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper * u);
 		Gecode::FloatVar vdbDividedByBulkJunctionPotential(getSpace(), 0, 1000000000000000000000000000000000);
 		Gecode::rel(getSpace(), vdb == vdbDividedByBulkJunctionPotential * bulkJunctionContactPotential);
 
@@ -4709,7 +5545,10 @@ namespace AutomaticSizing {
 		Gecode::IntVar width = getTransistorToWidthMap().find(component);
 		Gecode::FloatVar widthHelper(getSpace(), 1, getSpace().getWidthUpperBound());
 		channel(getSpace(), width, widthHelper);
-		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * u);
+		Gecode::IntVar multiplier = getTransistorToMultiplierMap().find(component);
+		Gecode::FloatVar multiplierHelper(getSpace(), 1, getSpace().getMultiplierUpperBound());
+		channel(getSpace(), multiplier, multiplierHelper);
+		Gecode::FloatVar normedWidth = Gecode::expr(getSpace(), widthHelper * multiplierHelper);
 		return Gecode::expr(getSpace(), (zeroBiasBulkJunctionCapacitance* lateralDiffusionLength* normedWidth + (2 * lateralDiffusionLength + normedWidth) * zeroBiasSidewallBulkJunctionCapacitance));
 	}
 
@@ -4722,6 +5561,17 @@ namespace AutomaticSizing {
 	{
 		assert(transistorModel_ =="EKV" || transistorModel_ == "SHM", "Transistor model not supported");
 		return transistorModel_;
+	}
+
+	void CircuitSpecificationsConstraints::setEKVVersion(int version)
+	{
+		ekvVersion_ = version;
+	}
+
+	int CircuitSpecificationsConstraints::getEKVVersion() const
+	{
+		assert(ekvVersion_ == 1 || ekvVersion_ == 2 || ekvVersion_ == 3, "EKV version not supported");
+		return ekvVersion_;
 	}
 
 	const StructRec::StructureCircuits&  CircuitSpecificationsConstraints::getStructureRecognitionResult() const

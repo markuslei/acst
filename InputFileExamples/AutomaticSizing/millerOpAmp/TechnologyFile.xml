@@ -1,0 +1,123 @@
+<general>
+	<thermalVoltage Vt = "0.026"></thermalVoltage><!--- [V] -->
+</general>
+<pmos>
+	<!-- EKV3 -->
+	
+	<thresholdVoltageEKV_LMAX500 vth="-0.33"></thresholdVoltageEKV_LMAX500>
+	<mobilityOxideCapacityEKV_LMAX500 muCox="0.00017"></mobilityOxideCapacityEKV_LMAX500>
+	<slopeFactorEKV_LMAX500 n="1.21"></slopeFactorEKV_LMAX500>
+	<channelLengthCoefficientEKV_LMAX500 lamda="0.19"></channelLengthCoefficientEKV_LMAX500>
+	<mobilityReductionCoefficientEKV_LMAX500 theta="0.16"></mobilityReductionCoefficientEKV_LMAX500> 
+	<DIBLCoefficientEKV_LMAX500 eta="0.010"></DIBLCoefficientEKV_LMAX500>
+
+	<thresholdVoltageEKV_LMIN500_LMAX1200 vth="-0.31"></thresholdVoltageEKV_LMIN500_LMAX1200>
+	<mobilityOxideCapacityEKV_LMIN500_LMAX1200 muCox="0.00023"></mobilityOxideCapacityEKV_LMIN500_LMAX1200>
+	<slopeFactorEKV_LMIN500_LMAX1200 n="1.13"></slopeFactorEKV_LMIN500_LMAX1200>
+	<channelLengthCoefficientEKV_LMIN500_LMAX1200 lamda="0.11"></channelLengthCoefficientEKV_LMIN500_LMAX1200>
+	<mobilityReductionCoefficientEKV_LMIN500_LMAX1200 theta="0.29"></mobilityReductionCoefficientEKV_LMIN500_LMAX1200> 
+	<DIBLCoefficientEKV_LMIN500_LMAX1200 eta="0.008"></DIBLCoefficientEKV_LMIN500_LMAX1200>
+
+	<thresholdVoltageEKV_LMIN1200_LMAX2100 vth="-0.31"></thresholdVoltageEKV_LMIN1200_LMAX2100>
+	<mobilityOxideCapacityEKV_LMIN1200_LMAX2100 muCox="0.00024"></mobilityOxideCapacityEKV_LMIN1200_LMAX2100>
+	<slopeFactorEKV_LMIN1200_LMAX2100 n="1.06"></slopeFactorEKV_LMIN1200_LMAX2100>
+	<channelLengthCoefficientEKV_LMIN1200_LMAX2100 lamda="0.065"></channelLengthCoefficientEKV_LMIN1200_LMAX2100>
+	<mobilityReductionCoefficientEKV_LMIN1200_LMAX2100 theta="0.33"></mobilityReductionCoefficientEKV_LMIN1200_LMAX2100> 
+	<DIBLCoefficientEKV_LMIN1200_LMAX2100 eta="0.0085"></DIBLCoefficientEKV_LMIN1200_LMAX2100>
+
+	<thresholdVoltageEKV_LMIN2100_LMAX5000 vth="-0.31"></thresholdVoltageEKV_LMIN2100_LMAX5000>
+	<mobilityOxideCapacityEKV_LMIN2100_LMAX5000 muCox="0.00025"></mobilityOxideCapacityEKV_LMIN2100_LMAX5000>
+	<slopeFactorEKV_LMIN2100_LMAX5000 n="1.08"></slopeFactorEKV_LMIN2100_LMAX5000>
+	<channelLengthCoefficientEKV_LMIN2100_LMAX5000 lamda="0.058"></channelLengthCoefficientEKV_LMIN2100_LMAX5000>
+	<mobilityReductionCoefficientEKV_LMIN2100_LMAX5000 theta="0.34"></mobilityReductionCoefficientEKV_LMIN2100_LMAX5000> 
+	<DIBLCoefficientEKV_LMIN2100_LMAX5000 eta="0.0084"></DIBLCoefficientEKV_LMIN2100_LMAX5000>
+
+	<thresholdVoltageEKV_LMIN5000 vth="-0.30"></thresholdVoltageEKV_LMIN5000>
+	<mobilityOxideCapacityEKV_LMIN5000 muCox="0.00026"></mobilityOxideCapacityEKV_LMIN5000>
+	<slopeFactorEKV_LMIN5000 n="1.09"></slopeFactorEKV_LMIN5000>
+	<channelLengthCoefficientEKV_LMIN5000 lamda="0.050"></channelLengthCoefficientEKV_LMIN5000>
+	<mobilityReductionCoefficientEKV_LMIN5000 theta="0.42"></mobilityReductionCoefficientEKV_LMIN5000> 
+	<DIBLCoefficientEKV_LMIN5000 eta="0.0085"></DIBLCoefficientEKV_LMIN5000>
+	
+
+
+
+
+	
+
+	<thresholdVoltageSHM vth="-0.28"></thresholdVoltageSHM><!--- [V] -->
+	<mobilityOxideCapacitySHM muCox="0.00015"></mobilityOxideCapacitySHM><!--- [A/(V^2)] -->
+	<earlyVoltage earlyVoltage="12.5"></earlyVoltage><!--- [V/mum] -->
+	<overlapCapacity Cgdov = "0.00000000033" ></overlapCapacity><!--- [F/m] -->
+	<gateOxideCapacity Cox = "0.017"></gateOxideCapacity><!--- [F/m2] -->
+	<zeroBiasBulkJunctionCapacitance Cj = "0.0001"></zeroBiasBulkJunctionCapacitance><!--- [F/m^2] -->
+	<zeroBiasSidewallBulkJunctionCapacitance Cjsw = "0.0000000000721"></zeroBiasSidewallBulkJunctionCapacitance><!--- [F/m] -->
+	<bulkJunctionContactPotential pb = "0.8"></bulkJunctionContactPotential><!--- [V] -->
+	<lateralDiffusionLength Ldiff= "0.000001"></lateralDiffusionLength><!-- [mum] -->
+	<slopeFactorSHM n="1"></slopeFactorSHM>
+	<channelLengthCoefficientStrongInversionSHM lamda="0.024"></channelLengthCoefficientStrongInversionSHM>
+	<channelLengthCoefficientWeakInversionSHM lamda="0.8"></channelLengthCoefficientWeakInversionSHM>
+	<minArea Amin="1"></minArea><!--- [mum^2] -->
+	<minLength Lmin="0.05"></minLength><!--- [mum] --><!--- Is used as integer in the program -->
+	<minWidth Wmin="0.2"></minWidth><!--- [mum] --><!--- Is used as integer in the program -->
+	<minMultiplier Mmin="1"></minMultiplier><!--- Is used as integer in the program -->
+</pmos>
+
+<nmos>
+	<!-- EKV3 -->
+	
+	<thresholdVoltageEKV_LMAX500 vth="0.39"></thresholdVoltageEKV_LMAX500>
+	<mobilityOxideCapacityEKV_LMAX500 muCox="0.0002"></mobilityOxideCapacityEKV_LMAX500>
+	<slopeFactorEKV_LMAX500 n="1.15"></slopeFactorEKV_LMAX500>
+	<channelLengthCoefficientEKV_LMAX500 lamda="0.19"></channelLengthCoefficientEKV_LMAX500>
+	<mobilityReductionCoefficientEKV_LMAX500 theta="0.22"></mobilityReductionCoefficientEKV_LMAX500> 
+	<DIBLCoefficientEKV_LMAX500 eta="0.019"></DIBLCoefficientEKV_LMAX500>
+
+	<thresholdVoltageEKV_LMIN500_LMAX1200 vth="0.38"></thresholdVoltageEKV_LMIN500_LMAX1200>
+	<mobilityOxideCapacityEKV_LMIN500_LMAX1200 muCox="0.00028"></mobilityOxideCapacityEKV_LMIN500_LMAX1200>
+	<slopeFactorEKV_LMIN500_LMAX1200 n="1.01"></slopeFactorEKV_LMIN500_LMAX1200>
+	<channelLengthCoefficientEKV_LMIN500_LMAX1200 lamda="0.17"></channelLengthCoefficientEKV_LMIN500_LMAX1200>
+	<mobilityReductionCoefficientEKV_LMIN500_LMAX1200 theta="0.20"></mobilityReductionCoefficientEKV_LMIN500_LMAX1200> 
+	<DIBLCoefficientEKV_LMIN500_LMAX1200 eta="0.011"></DIBLCoefficientEKV_LMIN500_LMAX1200>
+
+	<thresholdVoltageEKV_LMIN1200_LMAX2100 vth="0.34"></thresholdVoltageEKV_LMIN1200_LMAX2100>
+	<mobilityOxideCapacityEKV_LMIN1200_LMAX2100 muCox="0.00032"></mobilityOxideCapacityEKV_LMIN1200_LMAX2100>
+	<slopeFactorEKV_LMIN1200_LMAX2100 n="1.0572"></slopeFactorEKV_LMIN1200_LMAX2100>
+	<channelLengthCoefficientEKV_LMIN1200_LMAX2100 lamda="0.05"></channelLengthCoefficientEKV_LMIN1200_LMAX2100>
+	<mobilityReductionCoefficientEKV_LMIN1200_LMAX2100 theta="0.24"></mobilityReductionCoefficientEKV_LMIN1200_LMAX2100> 
+	<DIBLCoefficientEKV_LMIN1200_LMAX2100 eta="0.011"></DIBLCoefficientEKV_LMIN1200_LMAX2100>
+
+	<thresholdVoltageEKV_LMIN2100_LMAX5000 vth="0.34"></thresholdVoltageEKV_LMIN2100_LMAX5000>
+	<mobilityOxideCapacityEKV_LMIN2100_LMAX5000 muCox="0.00034"></mobilityOxideCapacityEKV_LMIN2100_LMAX5000>
+	<slopeFactorEKV_LMIN2100_LMAX5000 n="1.06"></slopeFactorEKV_LMIN2100_LMAX5000>
+	<channelLengthCoefficientEKV_LMIN2100_LMAX5000 lamda="0.04"></channelLengthCoefficientEKV_LMIN2100_LMAX5000>
+	<mobilityReductionCoefficientEKV_LMIN2100_LMAX5000 theta="0.22"></mobilityReductionCoefficientEKV_LMIN2100_LMAX5000> 
+	<DIBLCoefficientEKV_LMIN2100_LMAX5000 eta="0.011"></DIBLCoefficientEKV_LMIN2100_LMAX5000>
+
+	<thresholdVoltageEKV_LMIN5000 vth="0.34"></thresholdVoltageEKV_LMIN5000>
+	<mobilityOxideCapacityEKV_LMIN5000 muCox="0.00034"></mobilityOxideCapacityEKV_LMIN5000>
+	<slopeFactorEKV_LMIN5000 n="1.05196"></slopeFactorEKV_LMIN5000>
+	<channelLengthCoefficientEKV_LMIN5000 lamda="0.03"></channelLengthCoefficientEKV_LMIN5000>
+	<mobilityReductionCoefficientEKV_LMIN5000 theta="0.21"></mobilityReductionCoefficientEKV_LMIN5000> 
+	<DIBLCoefficientEKV_LMIN5000 eta="0.009"></DIBLCoefficientEKV_LMIN5000>
+	
+	
+
+
+	<thresholdVoltageSHM vth="0.36"></thresholdVoltageSHM><!--- [V] -->
+	<mobilityOxideCapacitySHM muCox="0.00024"></mobilityOxideCapacitySHM><!--- [A/(V^2)] -->
+	<earlyVoltage earlyVoltage="8.2"></earlyVoltage><!--- [V/mum] -->
+	<overlapCapacity Cgdov = "0.0000" ></overlapCapacity><!--- [F/m] -->
+	<gateOxideCapacity Cox = "0.017"></gateOxideCapacity><!--- [F/m2] -->
+	<zeroBiasBulkJunctionCapacitance Cj = "0.0009"></zeroBiasBulkJunctionCapacitance><!--- [F/m^2] -->
+	<zeroBiasSidewallBulkJunctionCapacitance Cjsw = "0.00000000005"></zeroBiasSidewallBulkJunctionCapacitance><!--- [F/m] -->
+	<bulkJunctionContactPotential pb = "0.99"></bulkJunctionContactPotential><!--- [V] -->
+	<lateralDiffusionLength Ldiff= "0.00003"></lateralDiffusionLength><!-- [mum] -->
+	<slopeFactorSHM n="1"></slopeFactorSHM>
+	<channelLengthCoefficientStrongInversionSHM lamda="0.18"></channelLengthCoefficientStrongInversionSHM>
+	<channelLengthCoefficientWeakInversionSHM lamda="0.12"></channelLengthCoefficientWeakInversionSHM>
+	<minArea Amin="1"></minArea><!--- [mum] -->
+	<minLength Lmin=".05"></minLength><!--- [mum] --><!--- Is used as integer in the program -->
+	<minWidth Wmin=".2"></minWidth><!--- [mum] --><!--- Is used as integer in the program -->
+	<minMultiplier Mmin="1"></minMultiplier><!--- Is used as integer in the program -->
+</nmos>

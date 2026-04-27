@@ -45,7 +45,8 @@ namespace Partitioning {
 
 	Transistor::Transistor() :
 		width_(NOT_INITIALIZED_),
-		length_(NOT_INITIALIZED_)
+		length_(NOT_INITIALIZED_),
+		multiplier_(NOT_INITIALIZED_)
 	{
 	}
 
@@ -79,6 +80,11 @@ namespace Partitioning {
 		length_ = length;
 	}
 
+	void Transistor::setMultiplier(int multiplier)
+	{
+		multiplier_ = multiplier;
+	}
+
 	float Transistor::getLength() const
 	{
 		assert(hasLength());
@@ -91,6 +97,12 @@ namespace Partitioning {
 		return width_;
 	}
 
+	float Transistor::getMultiplier() const
+	{
+		assert(hasMultiplier());
+		return multiplier_;
+	}
+
 	void Transistor::print(std::ostream& stream) const
 	{
 		std::vector<const Core::Device*> devices = getArray().getDevices();
@@ -98,8 +110,8 @@ namespace Partitioning {
 		{
 			const Core::Device* device = it;
 			stream << device->getIdentifier().toStr() << " " << getPart().getPartId().toStr();
-			if(hasWidth() && hasLength())
-					stream << " Width: " << getWidth() << " Length: " << getLength();
+			if(hasWidth() && hasLength() && hasMultiplier())
+					stream << " Width: " << getWidth() << " Multiplier: " << getMultiplier() << " Length: " << getLength();
 			stream << std::endl;
 		}
 
@@ -113,6 +125,11 @@ namespace Partitioning {
 	bool Transistor::hasWidth() const
 	{
 		return width_ != NOT_INITIALIZED_;
+	}
+
+	bool Transistor::hasMultiplier() const
+	{
+		return multiplier_ != NOT_INITIALIZED_;
 	}
 
 

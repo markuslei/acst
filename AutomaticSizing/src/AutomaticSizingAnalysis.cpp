@@ -107,6 +107,7 @@ namespace AutomaticSizing {
 		automaticSizing->setCircuitInformation(circuitInformation);
 		automaticSizing->setStructureRecognitionResult(getStructureRecognitionResult().getTopLevelResults());
 		automaticSizing->setTransistorModel(getLocalOptions().getTransistorModel());
+		automaticSizing->setEKVVersion(getLocalOptions().getEKVVersion());
 		automaticSizing->setDefinition(getLocalOptions().getScaling());
 		automaticSizing->setRuntime(getLocalOptions().getRuntime());
 		result_ = &automaticSizing->compute();

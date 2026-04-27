@@ -95,6 +95,7 @@ namespace Partitioning {
 
         bool hasHelperStructure() const;
         bool hasLoadPart() const;
+        bool hasBiasPart() const;
         bool hasBiasPart(PartId partId) const;
         bool hasTransimpedancePart() const;
 
@@ -168,7 +169,6 @@ namespace Partitioning {
 	  static std::string mapFirstStageTypeEnumToString(const FirstStageTypeEnum & tt);
 
 	private:
-	  bool hasBiasPart() const;
 	  bool hasType() const;
 
 	private:

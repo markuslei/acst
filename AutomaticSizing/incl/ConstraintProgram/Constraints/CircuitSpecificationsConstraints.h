@@ -84,11 +84,13 @@ namespace AutomaticSizing {
 		void setCircuitInformation(const CircuitInformation & information);
 		void setTwoPortToValueMap(ComponentToIntVarMap & valueMap );
 		void setTransistorToWidthMap(ComponentToIntVarMap & widthMap );
+		void setTransistorToMultiplierMap(ComponentToIntVarMap & multiplierMap );
 		void setTransistorToLengthMap(ComponentToIntVarMap & lenghtMap);
 		void setTransistorToCurrentMap(ComponentToIntVarMap & currentMap);
 		void setNetToVoltageMap(NetToIntVarMap & voltageMap);
 		void setSpace(SearchSpace & space);
 		void setTransistorModel(std::string model);
+		void setEKVVersion(int version);
 
 		void createConstraints();
 		void createOptimizingConstraints();
@@ -99,12 +101,14 @@ namespace AutomaticSizing {
 		const Graph & getGraph() const;
 		const CircuitInformation & getCircuitInformation() const;
 		const ComponentToIntVarMap & getTransistorToWidthMap() const;
+		const ComponentToIntVarMap & getTransistorToMultiplierMap() const;
 		const ComponentToIntVarMap & getTransistorToLengthMap() const;
 		const ComponentToIntVarMap & getTransistorToCurrentMap() const;
 		const ComponentToIntVarMap & getTwoPortToValueMap() const;
 		const NetToIntVarMap & getNetToVoltageMap() const;
 		SearchSpace & getSpace() const;
 		std::string getTransistorModel() const;
+		int getEKVVersion() const;
 		const PolesAndZeros& getPolesAndZeros() const;
 		const StructRec::StructureCircuits&  getStructureRecognitionResult() const;
 
@@ -196,7 +200,7 @@ namespace AutomaticSizing {
 		Gecode::FloatVar createFirstStageGainFirstStageWithDiodeTransistorLoad();
 		Gecode::FloatVar computeGainFirstStageErrorFactor();
 
-		Gecode::FloatVar computeTransconductance(Partitioning::Component & transistor) const;
+		Gecode::FloatVar computeTransconductance(Partitioning::Component & transistor) ;
 		Gecode::FloatVar computeTransconductance(Partitioning::TransconductancePart & stage);
 		Gecode::FloatVar computeOutputConductance(Partitioning::Component & transistor);
 		Gecode::FloatVar computeOutputConductance(Partitioning::Part & part, Partitioning::TransconductancePart & stage);
@@ -236,12 +240,14 @@ namespace AutomaticSizing {
 		const Graph * graph_;
 		const CircuitInformation * circuitInformation_;
 		ComponentToIntVarMap * transistorToWidthMap_;
+		ComponentToIntVarMap * transistorToMultiplierMap_;
 		ComponentToIntVarMap* transistorToLengthMap_;
 		ComponentToIntVarMap * transistorToCurrentMap_;
 		ComponentToIntVarMap * twoPortToValueMap_;
 		NetToIntVarMap * netToVoltageMap_;
 		SearchSpace * space_;
 		std::string transistorModel_;
+		int ekvVersion_;
 
 	};
 

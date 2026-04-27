@@ -47,7 +47,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread") 
 
 add_definitions(-D_GLIBCXX_USE_CXX17_ABI=1)
-set(COMPONENTS Log Control Core HSpice StructRec  AutomaticSizing GecodeExtensions
+set(COMPONENTS Log Control Core HSpice StructRec  AutomaticSizing Simulation GecodeExtensions
 	Partitioning Synthesis)
 set(BINARY_NAME acst)
 

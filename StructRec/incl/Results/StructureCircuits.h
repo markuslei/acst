@@ -107,6 +107,8 @@ namespace StructRec {
 
 		void removeUncertainStructures();
 
+		const std::map<const int, StructureCircuit*> & getCircuitMap() const;
+
 	private:
 		bool hasInstance(Core::InstanceId id) const;
 		void addInstance(StructureInstance & instance);
@@ -117,8 +119,6 @@ namespace StructRec {
 
 		void writeXmlStructures(Core::XmlNode & node, Core::XmlDocument & doc, Core::InstanceNamePath instanceNamePath) const;
 		void writeXmlInstances (Core::XmlNode & node, Core::XmlDocument & doc, Core::InstanceNamePath instanceNamePath) const;
-
-		const std::map<const int, StructureCircuit*> & getCircuitMap() const;
 
 		std::string spaces (int columns) const;
 

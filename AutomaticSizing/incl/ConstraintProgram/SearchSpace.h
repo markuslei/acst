@@ -82,6 +82,7 @@ namespace AutomaticSizing {
 		void setCircuitInformation(const CircuitInformation & information);
 		void setStructureRecognitionResult(const StructRec::StructureCircuits & structRecResult);
 		void setTransistorModel(std::string transistorModel);
+		void setEKVVersion(int version);
 		void setDefinition(std::string definition);
 		void setPolesAndZeros(PolesAndZeros &polesAndZeros);
 		void setUsesHSpiceLibrary(bool usesIt);
@@ -134,6 +135,7 @@ namespace AutomaticSizing {
 		std::string getDefinition() const;
 		int getLengthUpperBound() const;
 		int getWidthUpperBound() const;
+		int getMultiplierUpperBound() const;
 		float getScalingFactorMUM() const;
 
 
@@ -158,6 +160,7 @@ namespace AutomaticSizing {
 
 		Gecode::FloatVar createChanneledFloatVar(Gecode::IntVar integer, long int lb, long int ub);
 		Gecode::FloatVar createFloatWidth(Gecode::IntVar intWidth);
+		Gecode::FloatVar createFloatMultiplier(Gecode::IntVar intMultiplier);
 		Gecode::FloatVar createFloatLength(Gecode::IntVar intLength);
 		Gecode::FloatVar createFloatCurrent(Gecode::IntVar intCurrent);
 		Gecode::FloatVar createFloatVoltage(Gecode::IntVar intVoltage);
@@ -175,6 +178,7 @@ namespace AutomaticSizing {
 		const StructRec::StructureCircuits & getStructureRecognitionResult() const;
 		SizingRulesConstraints & getSizingRulesConstraints();
 		std::string getTransistorModel() const;
+		int getEKVVersion() const;
 
 		Variables & getVariables();
 
@@ -195,8 +199,10 @@ namespace AutomaticSizing {
 		void createTransistorVariableMaps();
 		void createTransistorVariableIndexMaps(int & index);
 		void createWidthMap();
+		void createMultiplierMap();
 		void createLengthMap();
 		void createWidthIndexMap(int & index);
+		void createMultiplierIndexMap(int & index);
 		void createLengthIndexMap(int & index);
 		void createTwoPortValueMap();
 		void createTwoPortIndexMap(int & index);
@@ -241,7 +247,7 @@ namespace AutomaticSizing {
 
 
 		//only for testing:
-		void setWidthAndLength();
+		void setWidthAndLengthAndMultiplier();
 
 
 	protected:
@@ -281,10 +287,12 @@ namespace AutomaticSizing {
 
 		SizingRulesConstraints sizingRulesConstraints_;
 		std::string transistorModel_;
+		int ekvVersion_;
 		std::string definition_;
 
 
 		ComponentToIntVarMap transistorToWidthMap_;
+		ComponentToIntVarMap transistorToMultiplierMap_;
 		ComponentToIntVarMap transistorToLengthMap_;
 		ComponentToIntVarMap twoPortToValueMap_;
 		ComponentToIntVarMap transistorToCurrentMap_;
@@ -293,12 +301,13 @@ namespace AutomaticSizing {
 
 		int lengthUpperBound_;
 		int widthUpperBound_;
+		int multiplierUpperBound_;
 		float scalingFactorMUM_;
 
 		bool usesHSpiceLibrary_;
 
 
-		//Order: Lengths, Widths, Currents, Voltages,
+		//Order: Lengths, Widths, Multiplier, Currents, Voltages,
 		Gecode::IntVarArray variables_;
 		Gecode::FloatVar cost_;
 

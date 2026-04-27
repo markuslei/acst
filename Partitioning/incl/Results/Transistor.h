@@ -57,9 +57,11 @@ namespace Partitioning {
 
 		 void setWidth(float width);
 		 void setLength(float length);
+		 void setMultiplier(int multiplier);
 
 		 float getLength() const;
 		 float getWidth() const;
+		 float getMultiplier() const;
 
 		 void print(std::ostream& stream) const;
 
@@ -68,10 +70,12 @@ namespace Partitioning {
 
 		 bool hasLength() const;
 		 bool hasWidth() const;
+		 bool hasMultiplier() const;
 
 
 		float width_;
 		float length_;
+		float multiplier_;
 	};
 }
 

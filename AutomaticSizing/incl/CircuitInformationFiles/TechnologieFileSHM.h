@@ -65,16 +65,16 @@ namespace AutomaticSizing {
 
 		static const std::string PMOS_NODE_;
 		static const std::string NMOS_NODE_;
-		static const std::string THRESHOLD_VOLTAGE_NODE_;
-		static const std::string MOBILITY_OXIDE_CAPACITY_NODE_;
+		static const std::string THRESHOLD_VOLTAGE_SHM_NODE_;
+		static const std::string MOBILITY_OXIDE_CAPACITY_SHM_NODE_;
 		static const std::string EARLY_VOLTAGE_NODE_;
-		static const std::string THRESHOLD_VOLTAGE_ATTRIBUTE_;
-		static const std::string MOBILITY_OXIDE_CAPACITY_ATTRIBUTE_;
+		static const std::string THRESHOLD_VOLTAGE_SHM_ATTRIBUTE_;
+		static const std::string MOBILITY_OXIDE_CAPACITY_SHM_ATTRIBUTE_;
 		static const std::string EARLY_VOLTAGE_ATTRIBUTE_;
 		static const std::string OVERLAP_CAPACITY_NODE_;
 		static const std::string OVERLAP_CAPACITY_ATTRIBUTE_;
-		static const std::string SLOPE_FACTOR_NODE_;
-		static const std::string SLOPE_FACTOR_ATTRIBUTE_;
+		static const std::string SLOPE_FACTOR_SHM_NODE_;
+		static const std::string SLOPE_FACTOR_SHM_ATTRIBUTE_;
 		static const std::string GATE_OXIDE_CAPACITY_NODE_;
 		static const std::string GATE_OXIDE_CAPACITY_ATTRIBUTE_;
 		static const std::string MIN_AREA_NODE_;
@@ -83,9 +83,11 @@ namespace AutomaticSizing {
 		static const std::string MIN_LENGTH_ATTRIBUTE_;
 		static const std::string MIN_WIDTH_NODE_;
 		static const std::string MIN_WIDTH_ATTRIBUTE_;
-		static const std::string CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_NODE_;
-		static const std::string CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_NODE_;
-		static const std::string CHANNEL_LENGTH_COEFFICIENT_ATTRIBUTE_;
+		static const std::string MIN_MULTIPLIER_NODE_;
+		static const std::string MIN_MULTIPLIER_ATTRIBUTE_;
+		static const std::string CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_SHM_NODE_;
+		static const std::string CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_SHM_NODE_;
+		static const std::string CHANNEL_LENGTH_COEFFICIENT_SHM_ATTRIBUTE_;
 		static const std::string ZERO_BIAS_BULK_JUNCTION_CAPACITANCE_NODE_;
 		static const std::string ZERO_BIAS_BULK_JUNCTION_CAPACITANCE_ATTRIBUTE_;
 		static const std::string ZERO_BIAS_SIDEWALL_BULK_JUNCTION_CAPACITANCE_NODE_;

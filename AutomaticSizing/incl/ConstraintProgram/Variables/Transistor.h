@@ -56,6 +56,7 @@ public:
 	void setType(const std::string type);
 
 	void setWidthIndex(int widthIndex);
+	void setMultiplierIndex(int multiplierIndex);
 	void setLengthIndex(int lengtIndex);
 	void setCurrentIndex(int currentIndex);
 	void setGateVoltageIndex(int gateVoltageIndex);
@@ -65,6 +66,7 @@ public:
 	std::string getType() const;
 
 	int getWidthIndex() const;
+	int getMultiplierIndex() const;
 	int getLengthIndex() const;
 	int getCurrentIndex() const;
 	int getGateVoltageIndex() const;
@@ -73,6 +75,7 @@ public:
 
 	void changeLengthRndSeed(unsigned int newSeed);
 	void changeWidthRndSeed(unsigned int newSeed);
+	void changeMultiplierRndSeed(unsigned int newSeed);
 	void changeCurrentRndSeed(unsigned int newSeed);
 	void changeGateVoltageRndSeed(unsigned int newSeed);
 	void changeDrainVoltageRndSeed(unsigned int newSeed);
@@ -80,6 +83,7 @@ public:
 
 	unsigned int getLengthRndSeed();
 	unsigned int getWidthRndSeed();
+	unsigned int getMultiplierRndSeed();
 	unsigned int getCurrentRndSeed();
 	unsigned int getGateVoltageRndSeed();
 	unsigned int getDrainVoltageRndSeed();
@@ -125,6 +129,8 @@ private:
 	mutable unsigned int lengthRndSeed_;
 	int widthIndex_;
 	mutable unsigned int widthRndSeed_;
+	int multiplierIndex_;
+	mutable unsigned int multiplierRndSeed_;
 	int currentIndex_;
 	mutable unsigned int currentRndSeed_;
 	int gateVoltageIndex_;

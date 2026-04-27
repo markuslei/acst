@@ -1,0 +1,22 @@
+.GLOBAL vdd! gnd!
+
+.TEMP 25.0
+.OPTION
++    ARTIST=2
++    INGOLD=2
++    PARHIER=LOCAL
++    PSF=2
+
+** Name: SimpleTwoStageOpAmp_SimpleOpAmp8_7
+
+m1 ibias ibias gnd! gnd! nmos
+m2 FirstStageYout1 FirstStageYout1 vdd! vdd! pmos
+m3 out ibias gnd! gnd! nmos
+m4 outFirstStage inp FirstStageYsourceTransconductance FirstStageYsourceTransconductance nmos
+m5 FirstStageYout1 inn FirstStageYsourceTransconductance FirstStageYsourceTransconductance nmos
+m6 FirstStageYsourceTransconductance ibias gnd! gnd! nmos
+m7 out outFirstStage vdd! vdd! pmos
+m8 outFirstStage FirstStageYout1 vdd! vdd! pmos
+cl out gnd!
+cc outFirstStage out
+.END

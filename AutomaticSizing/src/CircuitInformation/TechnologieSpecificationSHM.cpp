@@ -53,6 +53,7 @@ const int TechnologieSpecificationSHM::NOT_INITIALIZED_ = -100;
 				Amin_(NOT_INITIALIZED_),
 				Lmin_(NOT_INITIALIZED_),
 				Wmin_(NOT_INITIALIZED_),
+				Mmin_(NOT_INITIALIZED_),
 				lambdaWeakInversion_(NOT_INITIALIZED_),
 				lambdaStrongInversion_(NOT_INITIALIZED_),
 				cj_(NOT_INITIALIZED_),
@@ -75,6 +76,7 @@ const int TechnologieSpecificationSHM::NOT_INITIALIZED_ = -100;
 		techSpec->setMinArea(getMinArea());
 		techSpec->setMinLength(getMinLength());
 		techSpec->setMinWidth(getMinWidth());
+		techSpec->setMinMultiplier(getMinMultiplier());
 		techSpec->setMobilityOxideCapacityCoefficient(getMobilityOxideCapacityCoefficient());
 		techSpec->setOverlapCapacity(getOverlapCapacity());
 		techSpec->setSlopeFactor(getSlopeFactor());
@@ -218,6 +220,11 @@ const int TechnologieSpecificationSHM::NOT_INITIALIZED_ = -100;
 		Wmin_ = minWidth;
 	}
 
+	void TechnologieSpecificationSHM::setMinMultiplier(int minMultiplier)
+	{
+		Mmin_ = minMultiplier;
+	}
+
 	int TechnologieSpecificationSHM::getMinArea() const
 	{
 		assert(Amin_ != NOT_INITIALIZED_);
@@ -228,6 +235,12 @@ const int TechnologieSpecificationSHM::NOT_INITIALIZED_ = -100;
 	{
 		assert(Wmin_ != NOT_INITIALIZED_);
 		return Wmin_;
+	}
+
+	int TechnologieSpecificationSHM::getMinMultiplier() const
+	{
+		assert(Mmin_ != NOT_INITIALIZED_);
+		return Mmin_;
 	}
 
 	int TechnologieSpecificationSHM::getMinLength() const

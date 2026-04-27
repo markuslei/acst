@@ -52,16 +52,16 @@ namespace AutomaticSizing {
 
 	const std::string TechnologieFileSHM::PMOS_NODE_ = "pmos";
 	const std::string TechnologieFileSHM::NMOS_NODE_ = "nmos";
-	const std::string TechnologieFileSHM::THRESHOLD_VOLTAGE_NODE_ = "thresholdVoltage";
-	const std::string TechnologieFileSHM::MOBILITY_OXIDE_CAPACITY_NODE_ = "mobilityOxideCapacity";
+	const std::string TechnologieFileSHM::THRESHOLD_VOLTAGE_SHM_NODE_ = "thresholdVoltageSHM";
+	const std::string TechnologieFileSHM::MOBILITY_OXIDE_CAPACITY_SHM_NODE_ = "mobilityOxideCapacitySHM";
 	const std::string TechnologieFileSHM::EARLY_VOLTAGE_NODE_ = "earlyVoltage";
-	const std::string TechnologieFileSHM::THRESHOLD_VOLTAGE_ATTRIBUTE_ = "vth";
-	const std::string TechnologieFileSHM::MOBILITY_OXIDE_CAPACITY_ATTRIBUTE_ = "muCox";
+	const std::string TechnologieFileSHM::THRESHOLD_VOLTAGE_SHM_ATTRIBUTE_ = "vth";
+	const std::string TechnologieFileSHM::MOBILITY_OXIDE_CAPACITY_SHM_ATTRIBUTE_ = "muCox";
 	const std::string TechnologieFileSHM::EARLY_VOLTAGE_ATTRIBUTE_ = "earlyVoltage";
 	const std::string TechnologieFileSHM::OVERLAP_CAPACITY_NODE_ = "overlapCapacity";
 	const std::string TechnologieFileSHM::OVERLAP_CAPACITY_ATTRIBUTE_ = "Cgdov";
-	const std::string TechnologieFileSHM::SLOPE_FACTOR_NODE_ = "slopeFactor";
-	const std::string TechnologieFileSHM::SLOPE_FACTOR_ATTRIBUTE_ = "n";
+	const std::string TechnologieFileSHM::SLOPE_FACTOR_SHM_NODE_ = "slopeFactorSHM";
+	const std::string TechnologieFileSHM::SLOPE_FACTOR_SHM_ATTRIBUTE_ = "n";
 	const std::string TechnologieFileSHM::GATE_OXIDE_CAPACITY_NODE_ = "gateOxideCapacity";
 	const std::string TechnologieFileSHM::GATE_OXIDE_CAPACITY_ATTRIBUTE_ = "Cox";
 	const std::string TechnologieFileSHM::MIN_AREA_NODE_ = "minArea";
@@ -70,9 +70,11 @@ namespace AutomaticSizing {
 	const std::string TechnologieFileSHM::MIN_LENGTH_ATTRIBUTE_ = "Lmin";
 	const std::string TechnologieFileSHM::MIN_WIDTH_NODE_ = "minWidth";
 	const std::string TechnologieFileSHM::MIN_WIDTH_ATTRIBUTE_ = "Wmin";
-	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_NODE_ = "channelLengthCoefficientStrongInversion";
-	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_NODE_ = "channelLengthCoefficientWeakInversion";
-	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_ATTRIBUTE_ = "lamda";
+	const std::string TechnologieFileSHM::MIN_MULTIPLIER_NODE_ = "minMultiplier";
+	const std::string TechnologieFileSHM::MIN_MULTIPLIER_ATTRIBUTE_ = "Mmin";
+	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_SHM_NODE_ = "channelLengthCoefficientStrongInversionSHM";
+	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_SHM_NODE_ = "channelLengthCoefficientWeakInversionSHM";
+	const std::string TechnologieFileSHM::CHANNEL_LENGTH_COEFFICIENT_SHM_ATTRIBUTE_ = "lamda";
 	const std::string TechnologieFileSHM::ZERO_BIAS_BULK_JUNCTION_CAPACITANCE_NODE_ = "zeroBiasBulkJunctionCapacitance";
 	const std::string TechnologieFileSHM::ZERO_BIAS_BULK_JUNCTION_CAPACITANCE_ATTRIBUTE_ = "Cj";
 	const std::string TechnologieFileSHM::ZERO_BIAS_SIDEWALL_BULK_JUNCTION_CAPACITANCE_NODE_ = "zeroBiasSidewallBulkJunctionCapacitance";
@@ -81,6 +83,7 @@ namespace AutomaticSizing {
 	const std::string TechnologieFileSHM::BULK_JUNCTION_CONTACT_POTENTIAL_ATTRIBUTE_ = "pb";
 	const std::string TechnologieFileSHM::LATERAL_DIFFUSION_LENGTH_NODE_ = "lateralDiffusionLength";
 	const std::string TechnologieFileSHM::LATERAL_DIFFUSION_LENGTH_ATTRIBUTE_ = "Ldiff";
+
 
 
 
@@ -129,20 +132,20 @@ namespace AutomaticSizing {
 
 	void TechnologieFileSHM::parseSpecification(rapidxml::xml_node<>& typeNode, TechnologieSpecificationSHM & technologieSpecification)
 	{
-		rapidxml::xml_node<>* thresholdVoltageNode = typeNode.first_node(THRESHOLD_VOLTAGE_NODE_.c_str());
+		rapidxml::xml_node<>* thresholdVoltageNode = typeNode.first_node(THRESHOLD_VOLTAGE_SHM_NODE_.c_str());
 		if(thresholdVoltageNode != NULL)
 		{
-			rapidxml::xml_attribute<>* voltageAttribute = thresholdVoltageNode->first_attribute(THRESHOLD_VOLTAGE_ATTRIBUTE_.c_str());
+			rapidxml::xml_attribute<>* voltageAttribute = thresholdVoltageNode->first_attribute(THRESHOLD_VOLTAGE_SHM_ATTRIBUTE_.c_str());
 			technologieSpecification.setThresholdVoltage(std::atof(voltageAttribute->value()));
 		}
 		else
 		{
 			assert(false, "ThresholdVoltage needs to be specified.");
 		}
-		rapidxml::xml_node<>* mobilityOxideCapacityNode = typeNode.first_node(MOBILITY_OXIDE_CAPACITY_NODE_.c_str());
+		rapidxml::xml_node<>* mobilityOxideCapacityNode = typeNode.first_node(MOBILITY_OXIDE_CAPACITY_SHM_NODE_.c_str());
 		if(mobilityOxideCapacityNode != NULL)
 		{
-			rapidxml::xml_attribute<>* muCoxAttribute = mobilityOxideCapacityNode->first_attribute(MOBILITY_OXIDE_CAPACITY_ATTRIBUTE_.c_str());
+			rapidxml::xml_attribute<>* muCoxAttribute = mobilityOxideCapacityNode->first_attribute(MOBILITY_OXIDE_CAPACITY_SHM_ATTRIBUTE_.c_str());
 			technologieSpecification.setMobilityOxideCapacityCoefficient(std::atof(muCoxAttribute->value()));
 		}
 		else
@@ -160,10 +163,10 @@ namespace AutomaticSizing {
 		{
 			assert(false, "Overlap capacity needs to be specified.");
 		}
-		rapidxml::xml_node<>* slopeFactorNode = typeNode.first_node(SLOPE_FACTOR_NODE_.c_str());
+		rapidxml::xml_node<>* slopeFactorNode = typeNode.first_node(SLOPE_FACTOR_SHM_NODE_.c_str());
 		if(slopeFactorNode != NULL)
 		{
-			rapidxml::xml_attribute<>* slopeFactorAttribute = slopeFactorNode->first_attribute(SLOPE_FACTOR_ATTRIBUTE_.c_str());
+			rapidxml::xml_attribute<>* slopeFactorAttribute = slopeFactorNode->first_attribute(SLOPE_FACTOR_SHM_ATTRIBUTE_.c_str());
 			technologieSpecification.setSlopeFactor(std::atof(slopeFactorAttribute->value()));
 		}
 		else
@@ -210,15 +213,25 @@ namespace AutomaticSizing {
 		{
 			assert(false, "Minimal Width needs to be specified.");
 		}
+		rapidxml::xml_node<>* minMultiplierNode = typeNode.first_node(MIN_MULTIPLIER_NODE_.c_str());
+		if(minMultiplierNode != NULL)
+		{
+			rapidxml::xml_attribute<>* minMultiplierAttribute = minMultiplierNode->first_attribute(MIN_MULTIPLIER_ATTRIBUTE_.c_str());
+			technologieSpecification.setMinMultiplier(std::atof(minMultiplierAttribute->value()));
+		}
+		else
+		{
+			assert(false, "Minimal Multiplier needs to be specified.");
+		}
 
-		rapidxml::xml_node<>* channelLengthCoefficientWeakInversionNode = typeNode.first_node(CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_NODE_.c_str());
+		rapidxml::xml_node<>* channelLengthCoefficientWeakInversionNode = typeNode.first_node(CHANNEL_LENGTH_COEFFICIENT_WEAK_INVERSION_SHM_NODE_.c_str());
 		assert(channelLengthCoefficientWeakInversionNode != NULL, "Channel length coefficient needs to be specified.");
-		rapidxml::xml_attribute<>* channelLengthCoefficientWeakInversionAttribute = channelLengthCoefficientWeakInversionNode->first_attribute(CHANNEL_LENGTH_COEFFICIENT_ATTRIBUTE_.c_str());
+		rapidxml::xml_attribute<>* channelLengthCoefficientWeakInversionAttribute = channelLengthCoefficientWeakInversionNode->first_attribute(CHANNEL_LENGTH_COEFFICIENT_SHM_ATTRIBUTE_.c_str());
 		technologieSpecification.setChannelLengthCoefficientWeakInversion(std::atof(channelLengthCoefficientWeakInversionAttribute->value()));
 
-		rapidxml::xml_node<>* channelLengthCoefficientStrongInversionNode = typeNode.first_node(CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_NODE_.c_str());
+		rapidxml::xml_node<>* channelLengthCoefficientStrongInversionNode = typeNode.first_node(CHANNEL_LENGTH_COEFFICIENT_STRONG_INVERSION_SHM_NODE_.c_str());
 		assert(channelLengthCoefficientStrongInversionNode != NULL, "Channel length coefficient needs to be specified.");
-		rapidxml::xml_attribute<>* channelLengthCoefficientStrongInversionAttribute = channelLengthCoefficientStrongInversionNode->first_attribute(CHANNEL_LENGTH_COEFFICIENT_ATTRIBUTE_.c_str());
+		rapidxml::xml_attribute<>* channelLengthCoefficientStrongInversionAttribute = channelLengthCoefficientStrongInversionNode->first_attribute(CHANNEL_LENGTH_COEFFICIENT_SHM_ATTRIBUTE_.c_str());
 		technologieSpecification.setChannelLengthCoefficientStrongInversion(std::atof(channelLengthCoefficientStrongInversionAttribute->value()));
 
 		rapidxml::xml_node<>* zeroBiasBulkJunctionCapacitanceNode = typeNode.first_node(ZERO_BIAS_BULK_JUNCTION_CAPACITANCE_NODE_.c_str());

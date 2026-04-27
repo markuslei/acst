@@ -109,6 +109,7 @@ namespace AutomaticSizing {
 	SearchSpace::SearchSpace() :
 				result_(nullptr),
 				widthUpperBound_(NOT_INITIALIZED_),
+				multiplierUpperBound_(NOT_INITIALIZED_),
 				lengthUpperBound_(NOT_INITIALIZED_),
 				scalingFactorMUM_(NOT_INITIALIZED_),
 				circuitInformation_(nullptr),
@@ -128,6 +129,7 @@ namespace AutomaticSizing {
 		structRecResult_ = other.structRecResult_;
 		sizingRulesConstraints_ = other.sizingRulesConstraints_;
 		transistorModel_ = other.transistorModel_;
+		ekvVersion_ = other.ekvVersion_;
 		definition_ = other.definition_;
 		usesHSpiceLibrary_ = other.usesHSpiceLibrary_;
 		polesAndZeros_ = other.polesAndZeros_;
@@ -135,6 +137,7 @@ namespace AutomaticSizing {
 
 		lengthUpperBound_ = other.lengthUpperBound_;
 		widthUpperBound_ = other.widthUpperBound_;
+		multiplierUpperBound_ = other.multiplierUpperBound_;
 		scalingFactorMUM_ = other.scalingFactorMUM_;
 		indexToVariableMap_ = other.indexToVariableMap_;
 
@@ -153,6 +156,7 @@ namespace AutomaticSizing {
 	{
 		std::ostringstream oss;
 		oss << "Width: " << transistorToWidthMap_.toStr() << std::endl;
+		oss << "Multiplier: " << transistorToMultiplierMap_.toStr() << std::endl;
 		oss << "Length: " << transistorToLengthMap_.toStr() << std::endl;
 		oss << "TwoPorts: " << twoPortToValueMap_.toStr() << std::endl;
 		oss << "Voltages: " << netToVoltageMap_.toStr() << std::endl;
@@ -743,6 +747,7 @@ namespace AutomaticSizing {
 	void SearchSpace::initializeIntegerPolesAndZeros()
 	{
 		Gecode::FloatVar dominantPole = expr(*this, getPolesAndZeros().getDominantPole() * 100);
+		//Gecode::FloatVar dominantPole = expr(*this, getPolesAndZeros().getDominantPole());
 		Gecode::FloatVar dominantPoleHelper(*this, 0 , pow(10,10));
 		rel(*this, dominantPoleHelper <= dominantPole + 0.5);
 		rel(*this, dominantPoleHelper >= dominantPole - 0.5);
@@ -775,6 +780,8 @@ namespace AutomaticSizing {
 			Gecode::IntVar intPole(*this, 0, 10000000000);
 			channel(*this, poleHelper, intPole);
 			rel(*this, variables_[index] == intPole);
+
+			//rel(*this, intPole > dominantPoleInteger * 10);
 			importantNonDominantPoleIndex++;
 		}
 
@@ -887,11 +894,17 @@ namespace AutomaticSizing {
 	{
 		Gecode::Rnd r(1U);
 		Gecode::Rnd u(1U);
+		Gecode::Rnd m(2U);
 		Gecode::IntVar length = transistorToLengthMap_.find(component);
 		Gecode::IntVar width = transistorToWidthMap_.find(component);
+		Gecode::IntVar multiplier = transistorToMultiplierMap_.find(component);
 		Gecode::IntVar current = transistorToCurrentMap_.find(component);
 		branch(*this, length, Gecode::INT_VAL_RND(r));
+		branch(*this, multiplier, Gecode::INT_VAL_MIN());
+		//branch(*this, multiplier, Gecode::INT_VAL_RND(m));
+		//branch(*this, multiplier, Gecode::INT_VAL_SPLIT_MIN());
 		branch(*this, width, Gecode::INT_VAL_RND(u));
+		
 		branch(*this, current, Gecode::INT_VAL_SPLIT_MIN());
 
 
@@ -969,9 +982,10 @@ namespace AutomaticSizing {
 		std::vector<Partitioning::TwoPort*> twoPort =  getPartitioningResult().getAllTwoPorts();
 		const std::vector<Node*> nodes = getGraph().getAllNodes();
 		int numOfWidths = getSizingRulesConstraints().getEqualWidthMap().computeNumberOfNeededParameter(transistors);
+		int numOfMultipliers = getSizingRulesConstraints().getEqualMultiplierMap().computeNumberOfNeededParameter(transistors);	
 		int numOfLengths = getSizingRulesConstraints().getEqualLengthMap().computeNumberOfNeededParameter(transistors);
 
-		int numOfTransistorVariables = numOfWidths + numOfLengths + nodes.size() + transistors.size();
+		int numOfTransistorVariables = numOfWidths + numOfMultipliers + numOfLengths + nodes.size() + transistors.size();
 		int numOfTwoPortVariables =  twoPort.size();
 
 		int numOfPolesAndZeros = 2 + getPolesAndZeros().getNumberImportantNonDominantPoles() + getPolesAndZeros().getNumberImportantZeros()
@@ -1012,6 +1026,8 @@ namespace AutomaticSizing {
 		createLengthMap();
 //		logDebug("create Width Map");
 		createWidthMap();
+//		logDebug("create Multiplier Map");
+		createMultiplierMap();
 //		logDebug("create Current Map");
 		createCurrentMap();
 //		logDebug("create Voltage Map");
@@ -1026,6 +1042,8 @@ namespace AutomaticSizing {
 		createLengthIndexMap(index);
 //		logDebug("create Width Map");
 		createWidthIndexMap(index);
+//		logDebug("create Multiplier Map");
+		createMultiplierIndexMap(index);
 //		logDebug("create Current Map");
 		createCurrentIndexMap(index);
 //		logDebug("create Voltage Map");
@@ -1093,6 +1111,42 @@ namespace AutomaticSizing {
 		transistorToWidthMap_.setDefinition(getDefinition());
 	}
 
+	void SearchSpace::createMultiplierMap()
+	{
+		assert(getVariables().isInitialized(), "Transistors need to be initialized");
+		std::map<const StructRec::StructureId, std::vector<Partitioning::Component*>> equalMultiplierMap = getSizingRulesConstraints().getEqualMultiplierMap().getMap();
+		for(std::map<const StructRec::StructureId, std::vector<Partitioning::Component*> >::const_iterator it = equalMultiplierMap.begin(); it != equalMultiplierMap.end(); it++)
+		{
+			const StructRec::StructureId main = it->first;
+			int index = getVariables().findTransistor(main).getMultiplierIndex();
+			Gecode::IntVar intVar = variables_[index];
+			transistorToMultiplierMap_.add(getPartitioningResult().findComponent(main), intVar);
+
+
+			std::vector<Partitioning::Component*> belongingComps = it->second;
+			for(std::vector<Partitioning::Component*>::const_iterator it_comps = belongingComps.begin(); it_comps != belongingComps.end(); it_comps++)
+			{
+				Partitioning::Component* comp = *it_comps;
+				transistorToMultiplierMap_.add(*comp,intVar);
+			}
+		}
+		std::vector<Partitioning::Transistor*> transistors = getPartitioningResult().getAllTransistors();
+		for(std::vector<Partitioning::Transistor*>::const_iterator it = transistors.begin(); it != transistors.end(); it++)
+		{
+			Partitioning::Transistor * tran = *it;
+			if(!getSizingRulesConstraints().getEqualMultiplierMap().hasComponentAsMain(*tran)
+					&& !getSizingRulesConstraints().getEqualMultiplierMap().hasComponentAsSecondary(*tran))
+			{
+				int index = getVariables().findTransistor(tran->getArray().getIdentifier()).getMultiplierIndex();
+				Gecode::IntVar intVar = variables_[index];
+				transistorToMultiplierMap_.add(*tran, intVar);
+
+			}
+		}
+
+		transistorToMultiplierMap_.setDefinition(getDefinition());
+	}
+
 	void SearchSpace::createWidthIndexMap(int & index)
 	{
 		assert(getVariables().isInitialized(), "Transistors need to be initialized");
@@ -1142,6 +1196,57 @@ namespace AutomaticSizing {
 		}
 
 		transistorToWidthMap_.setDefinition(getDefinition());
+	}
+
+	void SearchSpace::createMultiplierIndexMap(int & index)
+	{
+		assert(getVariables().isInitialized(), "Transistors need to be initialized");
+		std::map<const StructRec::StructureId, std::vector<Partitioning::Component*>> equalMultiplierMap = getSizingRulesConstraints().getEqualMultiplierMap().getMap();
+		for(std::map<const StructRec::StructureId, std::vector<Partitioning::Component*> >::const_iterator it = equalMultiplierMap.begin(); it != equalMultiplierMap.end(); it++)
+		{
+			const StructRec::StructureId main = it->first;
+			getVariables().findTransistor(main).setMultiplierIndex(index);
+
+			std::ostringstream mainString;
+			mainString << "Multiplier: " << main.toStr();
+
+			indexToVariableMap_.insert(std::pair<int, std::string>(index, mainString.str()));
+
+			std::vector<Partitioning::Component*> belongingComps = it->second;
+			for(std::vector<Partitioning::Component*>::const_iterator it_comps = belongingComps.begin(); it_comps != belongingComps.end(); it_comps++)
+			{
+				Partitioning::Component* comp = *it_comps;
+				getVariables().findTransistor(comp->getArray().getIdentifier()).setMultiplierIndex(index);
+
+				std::ostringstream oss;
+				std::string oldValue = indexToVariableMap_.at(index);
+				oss << oldValue << ", " << comp->getArray().getIdentifier().toStr();
+				indexToVariableMap_.at(index) = oss.str();
+
+			}
+			index++;
+		}
+		std::vector<Partitioning::Transistor*> transistors = getPartitioningResult().getAllTransistors();
+		for(std::vector<Partitioning::Transistor*>::const_iterator it = transistors.begin(); it != transistors.end(); it++)
+		{
+			Partitioning::Transistor * tran = *it;
+			if(!getSizingRulesConstraints().getEqualMultiplierMap().hasComponentAsMain(*tran)
+					&& !getSizingRulesConstraints().getEqualMultiplierMap().hasComponentAsSecondary(*tran))
+			{
+				getVariables().findTransistor(tran->getArray().getIdentifier()).setMultiplierIndex(index);
+
+				std::ostringstream mainString;
+				mainString << "Multiplier: " << tran->getArray().getIdentifier().toStr();
+
+				indexToVariableMap_.insert(std::pair<int, std::string>(index, mainString.str()));
+
+
+
+				index++;
+			}
+		}
+
+		transistorToMultiplierMap_.setDefinition(getDefinition());
 	}
 
 	void SearchSpace::createLengthMap()
@@ -1570,6 +1675,7 @@ namespace AutomaticSizing {
 		for(auto & tran : getPartitioningResult().getAllTransistors())
 		{
 			dom(*this, transistorToWidthMap_.find(*tran), 1, widthUpperBound_);
+			dom(*this, transistorToMultiplierMap_.find(*tran), 1, multiplierUpperBound_);
 			dom(*this, transistorToLengthMap_.find(*tran), 1, lengthUpperBound_);
 			dom(*this, transistorToCurrentMap_.find(*tran), -1000000000, 1000000000);
 		}
@@ -1595,7 +1701,9 @@ namespace AutomaticSizing {
 			{
 				Gecode::IntVar length = transistorToLengthMap_.find(*tran);
 				Gecode::IntVar width = transistorToWidthMap_.find(*tran);
+				Gecode::IntVar multiplier = transistorToMultiplierMap_.find(*tran);
 				rel(*this, width >= length);
+				//rel(*this, (width * multiplier <= 100) >> (multiplier == 1));
 			}
 		}
 	}
@@ -1753,6 +1861,7 @@ namespace AutomaticSizing {
 			transistorConstraints.setTransistorToCurrentMap(transistorToCurrentMap_);
 			transistorConstraints.setTransistorToLengthMap(transistorToLengthMap_);
 			transistorConstraints.setTransistorToWidthMap(transistorToWidthMap_);
+			transistorConstraints.setTransistorToMultiplierMap(transistorToMultiplierMap_);
 			transistorConstraints.createConstraints();
 		}
 		else
@@ -1766,6 +1875,8 @@ namespace AutomaticSizing {
 			transistorConstraints.setTransistorToCurrentMap(transistorToCurrentMap_);
 			transistorConstraints.setTransistorToLengthMap(transistorToLengthMap_);
 			transistorConstraints.setTransistorToWidthMap(transistorToWidthMap_);
+			transistorConstraints.setTransistorToMultiplierMap(transistorToMultiplierMap_);
+			transistorConstraints.setEKVVersion(getEKVVersion());
 			transistorConstraints.createConstraints();
 		}
 	}
@@ -1782,6 +1893,7 @@ namespace AutomaticSizing {
 		sizingRulesConstraints.setTransistorToCurrentMap(transistorToCurrentMap_);
 		sizingRulesConstraints.setTransistorToLengthMap(transistorToLengthMap_);
 		sizingRulesConstraints.setTransistorToWidthMap(transistorToWidthMap_);
+		sizingRulesConstraints.setTransistorToMultiplierMap(transistorToMultiplierMap_);
 		sizingRulesConstraints.setTwoPortToValueMap(twoPortToValueMap_);
 		sizingRulesConstraints.createMaps();
 		sizingRulesConstraints_ = sizingRulesConstraints;
@@ -1839,6 +1951,7 @@ namespace AutomaticSizing {
 		result->initializeTwoPortMap(getPartitioningResult());
 
 		transistorToWidthMap_.writeWidthToTransistor(*result);
+		transistorToMultiplierMap_.writeMultiplierToTransistor(*result);
 		transistorToLengthMap_.writeLengthToTransistor(*result);
 		twoPortToValueMap_.writeValueToCapacitance(*result);
 
@@ -1862,11 +1975,13 @@ namespace AutomaticSizing {
 		return * result;
 	}
 
-	void SearchSpace::setWidthAndLength()
+	void SearchSpace::setWidthAndLengthAndMultiplier()
 	{
 		transistorToLengthMap_.setLength(*this);
 
 		transistorToWidthMap_.setWidth(*this);
+
+		transistorToMultiplierMap_.setMultiplier(*this);
 
 		//For further help during debugging
 //		twoPortToValueMap_.setCapacitance(*this);
@@ -1879,6 +1994,11 @@ namespace AutomaticSizing {
 	void SearchSpace::setTransistorModel(std::string transistorModel)
 	{
 		transistorModel_ = transistorModel;
+	}
+
+	void SearchSpace::setEKVVersion(int version)
+	{
+		ekvVersion_ = version;
 	}
 
 	void SearchSpace::setDefinition(std::string definition)
@@ -1914,6 +2034,12 @@ namespace AutomaticSizing {
 		return transistorModel_;
 	}
 
+	int SearchSpace::getEKVVersion() const
+	{
+		assert(ekvVersion_ == 1 || ekvVersion_ == 2 || ekvVersion_ == 3, "EKV version not supported");
+		return ekvVersion_;
+	}
+
 	Variables & SearchSpace::getVariables()
 	{
 		assert(variablesMap_ != nullptr);
@@ -1937,6 +2063,12 @@ namespace AutomaticSizing {
 		return widthUpperBound_;
 	}
 
+	int SearchSpace::getMultiplierUpperBound() const
+	{
+		assert(multiplierUpperBound_ != NOT_INITIALIZED_);
+		return multiplierUpperBound_;
+	}
+
 	float SearchSpace::getScalingFactorMUM() const
 	{
 		assert(scalingFactorMUM_ != NOT_INITIALIZED_);
@@ -1947,14 +2079,16 @@ namespace AutomaticSizing {
 	{
 		if(definition_ == "1mum")
 		{
-			widthUpperBound_ = 600;
+			widthUpperBound_ = 10;
 			lengthUpperBound_ = 10;
+			multiplierUpperBound_ = 100;
 			scalingFactorMUM_ = pow(10,-6);
 		}
 		if(definition_ == "0.1mum")
 		{
-			widthUpperBound_ = 6000;
+			widthUpperBound_ = 100;
 			lengthUpperBound_ = 100;
+			multiplierUpperBound_ = 100;
 			scalingFactorMUM_ = pow(10,-7);
 		}
 	}
@@ -2045,6 +2179,12 @@ namespace AutomaticSizing {
 	{
 		Gecode::FloatVar channeledWidth = createChanneledFloatVar(intWidth, 1, widthUpperBound_);
 		return expr(*this, channeledWidth * getScalingFactorMUM());
+	}
+
+	Gecode::FloatVar SearchSpace::createFloatMultiplier(Gecode::IntVar intMultiplier)
+	{
+		Gecode::FloatVar channeledMultiplier = createChanneledFloatVar(intMultiplier, 1, multiplierUpperBound_);
+		return expr(*this, channeledMultiplier);
 	}
 
 	Gecode::FloatVar SearchSpace::createFloatLength(Gecode::IntVar intLength)

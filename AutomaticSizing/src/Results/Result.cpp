@@ -511,7 +511,7 @@ void Result::writeExpectedPerformance(std::ostream& stream) const
 	{
 		stream << "Expected Performance Values: " << std::endl;
 
-		stream << "Gain: "<< getGain() << " dB" << std::endl;;
+		stream << "Gain: "<< getGain() << " dB" << std::endl;
 	}
 
 	if(power_ != NOT_INITIALIZED_)
@@ -674,6 +674,12 @@ void Result::writeXmlTransistorDimensions(Core::XmlNode & node, Core::XmlDocumen
 		widthString << width;
 		Core::XmlNode & widthNode = Core::RapidXmlUtils::addNode(tranNode, doc, "Width", widthString.str());
 		Core::RapidXmlUtils::addAttr(widthNode, doc, "unit", "mu_m");
+
+		float multiplier = tran->getMultiplier();
+		std::ostringstream multiplierString;
+		multiplierString << multiplier;
+		Core::XmlNode & multiplierNode = Core::RapidXmlUtils::addNode(tranNode, doc, "Multiplier", multiplierString.str());
+		Core::RapidXmlUtils::addAttr(multiplierNode, doc, "unit", " ");
 
 		float length = tran->getLength();
 		std::ostringstream lengthString;

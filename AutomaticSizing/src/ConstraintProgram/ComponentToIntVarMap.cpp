@@ -126,6 +126,20 @@ namespace AutomaticSizing {
 		 }
 	 }
 
+	 void ComponentToIntVarMap::writeMultiplierToTransistor(Result & result)
+	 {
+		 for(IntVarMap::const_iterator it = intVarMap_.begin(); it != intVarMap_.end(); it++)
+		 {
+			 Partitioning::Component & comp = result.findComponent(it->first);
+			 if(comp.isTransistor())
+			 {
+				 Partitioning::Transistor & tran = static_cast<Partitioning::Transistor & >(comp);
+			 		int value = it->second.med();
+					tran.setMultiplier(value);
+			 }
+		 }
+	 }
+
 	 void ComponentToIntVarMap::writeCurrent(Result & result)
 	 {
 		 for(IntVarMap::const_iterator it = intVarMap_.begin(); it != intVarMap_.end(); it++)
@@ -492,6 +506,11 @@ namespace AutomaticSizing {
 //		 	it++;
 //		 	Gecode::rel(space, it->second == 210);
 
+	 }
+
+	 void ComponentToIntVarMap::setMultiplier(Gecode::Space & space)
+	 {
+	 		IntVarMap::const_iterator it = intVarMap_.begin();
 	 }
 
 	 void ComponentToIntVarMap::setLength(Gecode::Space & space)

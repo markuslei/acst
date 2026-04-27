@@ -211,7 +211,7 @@ namespace AutomaticSizing {
 				if(comp->getArray().getIdentifier() == component.getArray().getIdentifier())
 				{
 					map_.erase(map_.find(it_map->first));
-					it_map--;
+					//it_map--;
 					flag = true;
 					break;
 				}

@@ -174,7 +174,9 @@ namespace AutomaticSizing {
 		specificationsConstraints.setTransistorToCurrentMap(transistorToCurrentMap_);
 		specificationsConstraints.setTransistorToLengthMap(transistorToLengthMap_);
 		specificationsConstraints.setTransistorToWidthMap(transistorToWidthMap_);
+		specificationsConstraints.setTransistorToMultiplierMap(transistorToMultiplierMap_);
 		specificationsConstraints.setTransistorModel(getTransistorModel());
+		specificationsConstraints.setEKVVersion(getEKVVersion());
 		specificationsConstraints.setStructureRecognitionResult(getStructureRecognitionResult());
 		specificationsConstraints.createConstraints();
 //		rel(*this, gain_ <= getCircuitInformation().getCircuitSpecification().getGain()+15);

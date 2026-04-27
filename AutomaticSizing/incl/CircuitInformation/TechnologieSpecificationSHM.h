@@ -63,6 +63,7 @@ namespace AutomaticSizing {
 		void setMinArea(int minArea );
 		void setMinLength(int Lmin);
 		void setMinWidth(int minWidth);
+		void setMinMultiplier(int minMultiplier);
 		void setChannelLengthCoefficientStrongInversion(float lamda);
 		void setChannelLengthCoefficientWeakInversion(float lamda);
 
@@ -82,6 +83,7 @@ namespace AutomaticSizing {
 		float getChannelLengthCoefficientWeakInversion() const;
 		int getMinArea() const;
 		int getMinWidth() const;
+		int getMinMultiplier() const;
 		int getMinLength() const;
 
 		float getZeroBiasBulkJunctionCapacitance() const;
@@ -115,6 +117,7 @@ namespace AutomaticSizing {
 		int Amin_;
 		int Lmin_;
 		int Wmin_;
+		int Mmin_;
 		float lambdaWeakInversion_;
 		float lambdaStrongInversion_;
 		float pb_;

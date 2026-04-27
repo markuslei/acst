@@ -54,6 +54,8 @@ namespace AutomaticSizing
 			lengthRndSeed_(1),
 			widthIndex_(NOT_INITIALIZED_),
 			widthRndSeed_(1),
+			multiplierIndex_(NOT_INITIALIZED_),
+			multiplierRndSeed_(1),
 			currentIndex_(NOT_INITIALIZED_),
 			currentRndSeed_(1),
 			gateVoltageIndex_(NOT_INITIALIZED_),
@@ -109,6 +111,11 @@ namespace AutomaticSizing
 		widthIndex_ = widthIndex;
 	}
 
+	void Transistor::setMultiplierIndex(int multiplierIndex)
+	{
+		multiplierIndex_ = multiplierIndex;
+	}
+
 	void Transistor::setLengthIndex(int lengthIndex)
 	{
 		lengthIndex_ = lengthIndex;
@@ -139,6 +146,12 @@ namespace AutomaticSizing
 	{
 		assert(widthIndex_ != NOT_INITIALIZED_);
 		return widthIndex_;
+	}
+
+	int Transistor::getMultiplierIndex() const
+	{
+		assert(multiplierIndex_ != NOT_INITIALIZED_);
+		return multiplierIndex_;
 	}
 
 	int Transistor::getLengthIndex() const
@@ -181,6 +194,11 @@ namespace AutomaticSizing
 		widthRndSeed_ = newSeed;
 	}
 
+	void Transistor::changeMultiplierRndSeed(unsigned int newSeed)
+	{
+		multiplierRndSeed_ = newSeed;
+	}
+
 	void Transistor::changeCurrentRndSeed(unsigned int newSeed)
 	{
 		currentRndSeed_ = newSeed;
@@ -213,6 +231,11 @@ namespace AutomaticSizing
 
 	}
 
+	unsigned int Transistor::getMultiplierRndSeed()
+	{
+		return multiplierRndSeed_;
+	}
+
 	unsigned int Transistor::getCurrentRndSeed()
 	{
 		return currentRndSeed_;
@@ -240,6 +263,10 @@ namespace AutomaticSizing
 			return true;
 		}
 		else if(getWidthIndex() == index)
+		{
+			return true;
+		}
+		else if(getMultiplierIndex() == index)
 		{
 			return true;
 		}
@@ -272,6 +299,7 @@ namespace AutomaticSizing
 		oss << "Type: " << getType() << std::endl;
 		oss << "LengthIndex: " <<lengthIndex_ << std::endl;
 		oss << "WidthIndex: " << widthIndex_ << std::endl;
+		oss << "MultiplierIndex: " << multiplierIndex_ << std::endl;
 		oss << "CurrentIndex: " << currentIndex_ << std::endl;
 		oss << "GateVoltageIndex: " << gateVoltageIndex_ << std::endl;
 		oss << "DrainVoltageIndex: " << drainVoltageIndex_ << std::endl;
