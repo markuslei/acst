@@ -21,3 +21,10 @@ Three-stage op-amp extension (2026)
   Markus Leibl       <markusleibl@tum.de>
     - Partitioning: TransimpedancePart recognition for non-inverting second stages.
     - Synthesis: Complete 3-stage opamp synthesis including new TransImpedance block on HL3
+
+Student Projects (2025-2026)
+--------------------------------------------
+  Supervised by Markus Leibl
+
+  Keyi Yang keyi.yang.0108@gmail.com
+    - Simplified EKV models
