@@ -133,6 +133,7 @@ namespace Partitioning {
 		bool hasCurrentBiasOutputConnectionOnNet(const StructRec::Structure & structure, const StructRec::StructureNet& net) const;
 		bool hasCurrentBiasInputConnectionOnNet(const StructRec::Structure & structure, const StructRec::StructureNet& net) const;
 		bool hasSecondStageOutputConnection(const StructRec::StructureNet& net, const StructRec::StructureCircuits & circuits) const;
+		bool hasNonInvertingSecondStageOutputConnection(const StructRec::StructureNet& net) const;
 		bool hasSecondStageInputConnection(const StructRec::StructureNet & net, const StructRec::StructureCircuits & circuits) const;
 		bool hasFirstStageOutputConnection(const StructRec::StructureNet& net, const StructRec::StructureCircuits & circuits) const ;
 		bool hasThirdStageInputConnection(const TransconductancePart & part) const;
@@ -173,6 +174,7 @@ namespace Partitioning {
 		bool isInverterName(const StructRec::StructureName structureName) const;
 		bool isConnectedToInverterOutput(const StructRec::StructureNet & net, const StructRec::Structure & inverter) const;
 		bool inputOfInverterIsConnectedToFirstStageOutput(const StructRec::Structure & inverter, const StructRec::StructureCircuits &circuits) const;
+		bool inputOfInverterIsConnectedToNonInvertingSecondStageOutput(const StructRec::Structure & inverter) const;
 
 	private:
 		int idUndefinedPart_;

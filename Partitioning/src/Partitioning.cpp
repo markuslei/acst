@@ -368,10 +368,25 @@ namespace Partitioning {
 	void Partitioning::partitioningThirdStage(const StructRec::StructureCircuits &circuits)
 	{
 
+		// Same set of 15 inverter variants that partitioningNonInvertingSecondStage
+		// classifies. classifyInverter promotes them to "thirdStage" automatically
+		// when the inverter's input gate is on a primarySecondStage transconductance
+		// or a TransimpedancePart output (see classifyInverter).
 		classifyMosfetAnalogInverter(circuits);
 		classifyMosfetCascodedAnalogInverter(circuits);
+		classifyMosfetAnalogInverterNmosCurrentMirrorLoad(circuits);
+		classifyMosfetAnalogInverterPmosCurrentMirrorLoad(circuits);
+		classifyMosfetAnalogInverterNmosDiodeTransistor(circuits);
+		classifyMosfetAnalogInverterPmosDiodeTransistor(circuits);
+		classifyMosfetAnalogInverterNmosDiodeTransistorPmosCurrentMirrorLoad(circuits);
+		classifyMosfetAnalogInverterPmosDiodeTransistorNmosCurrentMirrorLoad(circuits);
 		classifyMosfetCascodedPMOSAnalogInverter(circuits);
 		classifyMosfetCascodedNMOSAnalogInverter(circuits);
+		classifyMosfetCascodedPMOSAnalogInverterCurrentMirrorLoad(circuits);
+		classifyMosfetCascodedNMOSAnalogInverterCurrentMirrorLoad(circuits);
+		classifyMosfetCascodedPMOSAnalogInverterOneDiodeTransistor(circuits);
+		classifyMosfetCascodedNMOSAnalogInverterOneDiodeTransistor(circuits);
+		classifyMosfetCascodedAnalogInverterTwoCurrentMirrorLoads(circuits);
 		//By symmetrical OTAs it can happen that the third stage is connected to first and second stage
 
 		if(getResult().hasSecondStage() && getResult().getSecondStages().size() > 1)
@@ -2327,43 +2342,52 @@ namespace Partitioning {
 
 	bool Partitioning::hasThirdStageOutputConnection(const StructRec::StructureNet& net, const StructRec::StructureCircuits &circuits) const
 	{
+		// In the 3-stage op-amp topologies we generate, the 2nd stage is always
+		// non-inverting (transimpedance-based) — that's what makes nested-Miller
+		// compensation between the 1st/2nd stage outputs and the final output
+		// work polarity-wise. So the 3rd stage's input must come from a
+		// non-inverting 2nd stage output (a TransimpedancePart output net),
+		// not from any kind of 2nd stage.
 		bool hasConnection = false;
-		const StructRec::StructurePinType output1 = StructRec::StructurePinType("MosfetAnalogInverter", "Output");
-		const StructRec::StructurePinType gate1_1 = StructRec::StructurePinType("MosfetAnalogInverter", "InputPMOS1");
-		const StructRec::StructurePinType gate1_2 = StructRec::StructurePinType("MosfetAnalogInverter", "InputNMOS1");
-		const StructRec::StructureName inverterName1 = StructRec::StructureName("MosfetAnalogInverter");
-		const StructRec::StructurePinType output2 = StructRec::StructurePinType("MosfetCascodedAnalogInverter", "Output");
-		const StructRec::StructurePinType gate2_1 = StructRec::StructurePinType("MosfetCascodedAnalogInverter", "InputPMOS1");
-		const StructRec::StructurePinType gate2_2 = StructRec::StructurePinType("MosfetCascodedAnalogInverter", "InputNMOS1");
-		const StructRec::StructureName inverterName2 = StructRec::StructureName("MosfetCascodedAnalogInverter");
-		const StructRec::StructurePinType output3 = StructRec::StructurePinType("MosfetCascodedPMOSAnalogInverter", "Output");
-		const StructRec::StructurePinType gate3_1 = StructRec::StructurePinType("MosfetCascodedPMOSAnalogInverter", "InputPMOS1");
-		const StructRec::StructurePinType gate3_2 = StructRec::StructurePinType("MosfetCascodedPMOSAnalogInverter", "InputNMOS1");
-		const StructRec::StructureName inverterName3 = StructRec::StructureName("MosfetCascodedPMOSAnalogInverter");
-		const StructRec::StructurePinType output4 = StructRec::StructurePinType("MosfetCascodedNMOSAnalogInverter", "Output");
-		const StructRec::StructurePinType gate4_1 = StructRec::StructurePinType("MosfetCascodedNMOSAnalogInverter", "InputPMOS1");
-		const StructRec::StructurePinType gate4_2 = StructRec::StructurePinType("MosfetCascodedNMOSAnalogInverter", "InputNMOS1");
-		const StructRec::StructureName inverterName4 = StructRec::StructureName("MosfetCascodedNMOSAnalogInverter");
 
 		std::vector<const StructRec::Structure*> connectedStructures = circuits.findConnectedStructures(net.getIdentifier());
 		for(auto& it : connectedStructures)
 		{
 			const StructRec::Structure & connectedStructure = * it;
-			if((connectedStructure.getStructureName() == inverterName1 && connectedStructure.findNet(output1).getIdentifier() == net.getIdentifier()
-					&& (hasSecondStageOutputConnection(connectedStructure.findNet(gate1_1), circuits) ||hasSecondStageOutputConnection(connectedStructure.findNet(gate1_2), circuits )) )
-					|| (connectedStructure.getStructureName() == inverterName2 && connectedStructure.findNet(output2).getIdentifier() == net.getIdentifier()
-					&& (hasSecondStageOutputConnection(connectedStructure.findNet(gate2_1), circuits) ||hasSecondStageOutputConnection(connectedStructure.findNet(gate2_2), circuits )) )
-					|| (connectedStructure.getStructureName() == inverterName3 && connectedStructure.findNet(output3).getIdentifier() == net.getIdentifier()
-					&& (hasSecondStageOutputConnection(connectedStructure.findNet(gate3_1), circuits) ||hasSecondStageOutputConnection(connectedStructure.findNet(gate3_2), circuits )) )
-					|| (connectedStructure.getStructureName() == inverterName4 && connectedStructure.findNet(output4).getIdentifier() == net.getIdentifier()
-					&& (hasSecondStageOutputConnection(connectedStructure.findNet(gate4_1), circuits) ||hasSecondStageOutputConnection(connectedStructure.findNet(gate4_2), circuits )) ))
+
+			if(getResult().structureAlreadyClassified(connectedStructure) && !getResult().isLoadPartOfFirstStage(getResult().getPart(connectedStructure)))
 			{
-				hasConnection = true;
-				break;
+				if(isInverterName(connectedStructure.getStructureName()))
+				{
+					if(isConnectedToInverterOutput(net, connectedStructure)
+							&& inputOfInverterIsConnectedToNonInvertingSecondStageOutput(connectedStructure))
+					{
+						hasConnection = true;
+						break;
+					}
+				}
 			}
 		}
 		return hasConnection;
+	}
 
+	bool Partitioning::hasNonInvertingSecondStageOutputConnection(const StructRec::StructureNet& net) const
+	{
+		// A "non-inverting second stage" means a TransimpedancePart-based stage
+		// (transconductance + transimpedance + stage bias). Its output net is
+		// the TransimpedancePart's output net. This is the only kind of 2nd
+		// stage we generate for 3-stage op-amps.
+		if(getResult().hasTransimpedanceParts())
+		{
+			for(auto & transimp : getResult().getAllTransimpedanceParts())
+			{
+				if(transimp->getOutputNet().getIdentifier() == net.getIdentifier())
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	bool Partitioning::hasSecondStageInputConnection(const StructRec::StructureNet & net, const StructRec::StructureCircuits & circuits) const
@@ -2547,6 +2571,52 @@ namespace Partitioning {
 		return isConnected;
 	}
 
+	bool Partitioning::inputOfInverterIsConnectedToNonInvertingSecondStageOutput(const StructRec::Structure & inverter) const
+	{
+		assert(isInverterName(inverter.getStructureName()), "Structure must be an inverter");
+		std::vector<StructRec::StructureName> inverterNames;
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodedAnalogInverter"));
+		inverterNames.push_back(StructRec::StructureName("MosfetAnalogInverter"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterNmosCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterPmosCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterNmosDiodeTransistor"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterPmosDiodeTransistor"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterNmosDiodeTransistorPmosCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterPmosDiodeTransistorNmosCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodedPMOSAnalogInverter"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodedNMOSAnalogInverter"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodePMOSAnalogInverterOneDiodeTransistor"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeNMOSAnalogInverterOneDiodeTransistor"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodePMOSAnalogInverterCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeNMOSAnalogInverterCurrentMirrorLoad"));
+		inverterNames.push_back(StructRec::StructureName("MosfetCascodeAnalogInverterTwoCurrentMirrorLoads"));
+
+		bool isConnected = false;
+		for(auto & inverterName : inverterNames)
+		{
+			const StructRec::StructurePinType inputPmos = StructRec::StructurePinType(inverterName.toStr(), "InputPMOS1");
+			const StructRec::StructurePinType inputNmos = StructRec::StructurePinType(inverterName.toStr(), "InputNMOS1");
+
+			if(inverter.hasPin(inputNmos))
+			{
+				if(hasNonInvertingSecondStageOutputConnection(inverter.findNet(inputNmos)))
+				{
+					isConnected = true;
+					break;
+				}
+			}
+			if(inverter.hasPin(inputPmos))
+			{
+				if(hasNonInvertingSecondStageOutputConnection(inverter.findNet(inputPmos)))
+				{
+					isConnected = true;
+					break;
+				}
+			}
+		}
+		return isConnected;
+	}
+
 
 	bool Partitioning::hasSecondStageOutputConnection(const StructRec::StructureNet& net, const StructRec::StructureCircuits &circuits) const
 	{
@@ -2570,16 +2640,9 @@ namespace Partitioning {
 			}
 		}
 
-		if(!hasConnection && getResult().hasTransimpedanceParts())
+		if(!hasConnection)
 		{
-			for(auto & transimp : getResult().getAllTransimpedanceParts())
-			{
-				if(transimp->getOutputNet().getIdentifier() == net.getIdentifier())
-				{
-					hasConnection = true;
-					break;
-				}
-			}
+			hasConnection = hasNonInvertingSecondStageOutputConnection(net);
 		}
 
 		return hasConnection;
